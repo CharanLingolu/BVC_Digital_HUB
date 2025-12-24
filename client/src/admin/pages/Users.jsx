@@ -51,11 +51,13 @@ const Users = () => {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 animate-fade-in-up">
           <div>
-            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-              <span className="p-2 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                <UsersIcon className="w-8 h-8" />
+            <h1 className="text-4xl font-black tracking-tight flex items-center gap-4">
+              <span className="group p-2.5 rounded-xl border-2 border-fuchsia-500/20 bg-fuchsia-50 dark:bg-fuchsia-900/10 text-fuchsia-600 dark:text-fuchsia-300 shadow-[0_0_15px_rgba(232,121,249,0.3)]">
+                <UsersIcon className="w-8 h-8 group-hover:scale-110 transition-transform duration-300 ease-out" />
               </span>
-              User Directory
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-600 via-pink-600 to-orange-500 dark:from-fuchsia-400 dark:via-pink-400 dark:to-orange-400">
+                User Directory
+              </span>
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">
               Manage student accounts and permissions.

@@ -1,325 +1,343 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import API from "../services/api";
 import { toast } from "react-toastify";
-import Navbar from "../components/Navbar";
 import {
   Heart,
   ArrowLeft,
   ExternalLink,
   Share2,
-  Clock,
-  ShieldCheck,
-  PlayCircle,
-  Copy,
   Check,
+  Layers,
+  Calendar,
+  Image as ImageIcon,
+  User,
+  Maximize2,
+  Loader2,
 } from "lucide-react";
+import Navbar from "../components/Navbar";
+import API from "../services/api";
+
+// Custom Hook for User ID
+const useCurrentUserId = () => {
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    try {
+      const userRaw = localStorage.getItem("user");
+      if (userRaw) {
+        const user = JSON.parse(userRaw);
+        setUserId(user._id || user.id);
+      }
+    } catch (error) {
+      console.error("Failed to parse user from local storage:", error);
+    }
+  }, []);
+
+  return userId;
+};
+
+// Loading Component
+const LoadingScreen = () => (
+  <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-[#020205]">
+    <Loader2 className="w-16 h-16 text-indigo-500 animate-spin" />
+    <p className="mt-4 text-xs font-black tracking-widest text-indigo-500 animate-pulse uppercase">
+      Loading Project...
+    </p>
+  </div>
+);
+
+// Avatar Component
+const Avatar = ({ user }) => {
+  return (
+    <div className="w-full h-full flex items-center justify-center">
+      {user?.profilePic ? (
+        <img
+          src={user.profilePic}
+          alt="avatar"
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <User size={24} className="text-slate-400 dark:text-slate-600" />
+      )}
+    </div>
+  );
+};
 
 const ProjectDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const currentUserId = useCurrentUserId();
 
   const [project, setProject] = useState(null);
   const [isLiking, setIsLiking] = useState(false);
   const [copied, setCopied] = useState(false);
   const errorShownRef = useRef(false);
 
-  // --- USER ID SYNC ---
-  const getCurrentUserId = () => {
-    try {
-      const raw =
-        localStorage.getItem("user") ||
-        localStorage.getItem("userInfo") ||
-        localStorage.getItem("authUser");
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      return (
-        parsed?._id ||
-        parsed?.id ||
-        parsed?.user?._id ||
-        parsed?.user?.id ||
-        null
-      );
-    } catch {
-      return null;
-    }
-  };
-
-  const [currentUserId, setCurrentUserId] = useState(getCurrentUserId());
-
-  useEffect(() => {
-    const syncUser = () => setCurrentUserId(getCurrentUserId());
-    window.addEventListener("storage", syncUser);
-    window.addEventListener("userUpdated", syncUser);
-    return () => {
-      window.removeEventListener("storage", syncUser);
-      window.removeEventListener("userUpdated", syncUser);
-    };
-  }, []);
-
-  // --- FETCH PROJECT ---
   useEffect(() => {
     let cancelled = false;
-    API.get(`/projects/${id}`)
-      .then((res) => {
-        if (cancelled) return;
-        setProject({
-          ...res.data,
-          likes: Array.isArray(res.data.likes) ? res.data.likes : [],
-          media: Array.isArray(res.data.media) ? res.data.media : [],
-        });
-      })
-      .catch(() => {
+    const fetchProject = async () => {
+      try {
+        const { data } = await API.get(`/projects/${id}`);
+        if (!cancelled) {
+          setProject({
+            ...data,
+            likes: Array.isArray(data.likes) ? data.likes : [],
+            media: Array.isArray(data.media) ? data.media : [],
+          });
+        }
+      } catch (error) {
         if (!errorShownRef.current) {
           errorShownRef.current = true;
-          toast.error("Failed to load project", { autoClose: 1500 });
+          toast.error("Failed to load project");
         }
-      });
+      }
+    };
+
+    fetchProject();
     return () => {
       cancelled = true;
     };
   }, [id]);
 
   if (!project) {
-    return (
-      <div className="h-screen w-screen bg-slate-50 dark:bg-[#090c10] flex flex-col items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
-        <p className="text-slate-500 dark:text-slate-400 font-bold animate-pulse text-sm">
-          Loading Project...
-        </p>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
+  const safeUserId = currentUserId ? String(currentUserId) : null;
   const isLiked =
-    !!currentUserId &&
-    project.likes.some(
-      (uid) => uid && uid.toString() === currentUserId.toString()
-    );
+    safeUserId && project.likes.some((uid) => String(uid) === safeUserId);
   const likesCount = project.likes.length;
-  const uName = project.user?.name || "Unknown Creator";
-  const uDept = project.user?.department || project.user?.dept || "General";
-  const postDate = project.createdAt
-    ? new Date(project.createdAt).toLocaleDateString()
-    : "Recently";
 
-  // --- ACTIONS ---
   const handleLike = async () => {
+    if (!localStorage.getItem("token")) {
+      toast.error("Please login to like");
+      return;
+    }
+
     if (isLiking) return;
     setIsLiking(true);
-    const previousLikes = project.likes;
-
-    setProject((prev) => ({
-      ...prev,
-      likes: isLiked
-        ? prev.likes.filter(
-            (uid) => uid && uid.toString() !== currentUserId.toString()
-          )
-        : [...prev.likes, currentUserId],
-    }));
 
     try {
       const { data } = await API.post(`/projects/${project._id}/like`);
-      setProject((prev) => ({ ...prev, likes: data.likes }));
-    } catch {
-      toast.error("Like failed", { autoClose: 1500 });
-      setProject((prev) => ({ ...prev, likes: previousLikes }));
+
+      // ✅ SINGLE SOURCE OF TRUTH
+      setProject((prev) => ({
+        ...prev,
+        likes: data.likes,
+      }));
+    } catch (err) {
+      toast.error("Like failed");
     } finally {
       setIsLiking(false);
     }
   };
 
   const handleShare = async () => {
-    const url = window.location.href;
-
-    // Try Native Share
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: project.title,
-          text: `Check out this project: ${project.title}`,
-          url: url,
-        });
-        return;
-      } catch (err) {
-        console.log("Share cancelled");
-      }
-    }
-
-    // Fallback to Clipboard
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
-      toast.success("Link copied to clipboard!");
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      toast.error("Failed to copy link");
+      setTimeout(() => setCopied(false), 1500);
+      toast.success("Link copied");
+    } catch {
+      toast.error("Copy failed");
     }
   };
 
-  return (
-    <div className="h-screen w-screen overflow-hidden bg-slate-50 dark:bg-[#090c10] text-slate-900 dark:text-white font-sans selection:bg-blue-500/30 flex flex-col">
-      <Navbar />
+  const uName = project.user?.name || "Unknown";
+  const uDept = project.user?.department || "General";
+  const postDate = project.createdAt
+    ? new Date(project.createdAt).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "Recently";
 
-      {/* Background Effects */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 dark:opacity-30 mix-blend-soft-light dark:mix-blend-overlay"></div>
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 dark:bg-blue-600/10 rounded-full blur-[100px]" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/10 dark:bg-purple-600/10 rounded-full blur-[100px]" />
-      </div>
-
-      {/* Main Content Centered */}
-      <main className="flex-1 relative z-10 flex items-center justify-center p-4 pt-20">
-        <div className="w-full max-w-6xl h-[85vh] bg-white/70 dark:bg-[#161b22]/80 backdrop-blur-2xl rounded-[2rem] shadow-2xl border border-white/50 dark:border-white/5 overflow-hidden flex flex-col md:flex-row">
-          {/* LEFT PANEL: Media Gallery (45%) */}
-          <div className="w-full md:w-[45%] bg-slate-100 dark:bg-[#0d1117]/50 border-r border-white/50 dark:border-white/5 relative flex flex-col">
-            {/* Back Button (Floating) */}
-            <button
-              onClick={() => navigate("/projects")}
-              className="absolute top-6 left-6 z-20 p-2.5 rounded-full bg-white/80 dark:bg-black/50 backdrop-blur-md border border-white/20 hover:scale-105 transition-transform text-slate-700 dark:text-white shadow-lg"
-              title="Back"
-            >
-              <ArrowLeft size={18} />
-            </button>
-
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4">
-              {project.media.length > 0 ? (
-                project.media.map((url, index) => (
-                  <div
-                    key={index}
-                    className="rounded-2xl overflow-hidden bg-white dark:bg-black shadow-md border border-slate-200 dark:border-slate-800 group relative"
-                  >
-                    {url.match(/\.(mp4|webm|ogg)$/i) ? (
-                      <video controls className="w-full h-auto object-cover">
-                        <source src={url} />
-                      </video>
-                    ) : (
-                      <img
-                        src={url}
-                        alt={`Project media ${index}`}
-                        className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700"
-                      />
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-60">
-                  <PlayCircle size={48} className="mb-2" />
-                  <p className="font-bold">No Media Uploaded</p>
-                </div>
-              )}
-            </div>
-
-            {/* Bottom Gradient Fade */}
-            <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-slate-100 dark:from-[#0d1117] to-transparent pointer-events-none"></div>
-          </div>
-
-          {/* RIGHT PANEL: Details & Actions (55%) */}
-          <div className="flex-1 flex flex-col h-full relative">
-            {/* Header Info */}
-            <div className="p-8 pb-4 border-b border-slate-200 dark:border-white/5 bg-white/50 dark:bg-[#161b22]/50 backdrop-blur-xl z-10">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 p-0.5 shadow-md">
-                  <div className="w-full h-full bg-slate-100 dark:bg-slate-800 rounded-[10px] overflow-hidden">
-                    <Avatar user={project.user} />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
-                    {uName}
-                  </h3>
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
-                    <span className="px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-                      {uDept}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock size={10} /> {postDate}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <h1
-                className="text-3xl font-black text-slate-900 dark:text-white leading-tight line-clamp-2"
-                title={project.title}
+  const renderMediaContent = () => {
+    if (project.media.length > 0) {
+      return project.media.map((url, index) => (
+        <div
+          key={index}
+          className="relative w-full rounded-2xl overflow-hidden bg-white dark:bg-[#12121a] shadow-xl border border-slate-300 dark:border-white/10 group transition-all"
+        >
+          <div className="relative z-10 flex items-center justify-center p-1.5">
+            {url.match(/\.(mp4|webm|ogg)$/i) ? (
+              <video
+                controls
+                className="w-full h-auto max-h-[60vh] object-contain rounded-xl bg-black"
               >
-                {project.title}
-              </h1>
-            </div>
-
-            {/* Scrollable Description */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-8">
-              <div className="prose dark:prose-invert max-w-none">
-                <p className="text-slate-600 dark:text-slate-300 text-base leading-relaxed whitespace-pre-wrap">
-                  {project.description}
-                </p>
-              </div>
-            </div>
-
-            {/* Bottom Action Bar */}
-            <div className="p-6 border-t border-slate-200 dark:border-white/5 bg-white/50 dark:bg-[#161b22]/80 backdrop-blur-xl">
-              <div className="flex items-center justify-between gap-4">
-                {/* Like Button */}
-                <button
-                  onClick={handleLike}
-                  disabled={isLiking}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold transition-all transform active:scale-[0.98] ${
-                    isLiked
-                      ? "bg-red-500 text-white shadow-lg shadow-red-500/30"
-                      : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
-                  }`}
-                >
-                  <Heart size={20} className={isLiked ? "fill-current" : ""} />
-                  <span>{likesCount}</span>
-                </button>
-
-                {/* Repo Link */}
-                {project.repoLink && (
-                  <a
-                    href={project.repoLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold shadow-lg hover:opacity-90 transition-all active:scale-[0.98]"
-                  >
-                    <ExternalLink size={18} /> Repo
-                  </a>
-                )}
-
-                {/* Share Button */}
-                <button
-                  onClick={handleShare}
-                  className="w-14 h-14 flex items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all active:scale-95"
-                  title="Share Project"
-                >
-                  {copied ? <Check size={20} /> : <Share2 size={20} />}
-                </button>
-              </div>
-            </div>
+                <source src={url} />
+              </video>
+            ) : (
+              <img
+                src={url}
+                alt="Visual"
+                className="w-full h-auto max-h-[60vh] object-contain rounded-xl"
+              />
+            )}
           </div>
         </div>
-      </main>
+      ));
+    }
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-600">
+        <ImageIcon size={60} strokeWidth={1} />
+        <p className="mt-4 font-bold text-xs uppercase tracking-widest opacity-50">
+          Visual Documentation Empty
+        </p>
+      </div>
+    );
+  };
+
+  const renderActionButtons = () => (
+    <div className="p-6 lg:p-8 border-t border-slate-200 dark:border-white/5 bg-white/50 dark:bg-black/20 backdrop-blur-xl shrink-0">
+      <div className="flex items-center gap-4">
+        <button
+          onClick={handleLike}
+          disabled={isLiking}
+          className={`flex-[2] relative h-14 rounded-2xl font-black transition-all duration-300 active:scale-90 flex items-center justify-center gap-3 border overflow-hidden ${
+            isLiked
+              ? "bg-rose-500/10 border-rose-500/50 text-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.25)]"
+              : "bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-rose-500 dark:hover:text-rose-400"
+          }`}
+        >
+          <Heart
+            size={24}
+            className={`transition-all duration-300 ${
+              isLiked
+                ? "fill-rose-500 stroke-rose-500 scale-110"
+                : "stroke-current"
+            }`}
+          />
+          <span className="text-lg">{likesCount}</span>
+        </button>
+
+        {project.repoLink && (
+          <a
+            href={project.repoLink}
+            target="_blank"
+            rel="noreferrer"
+            className="
+              flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 px-6
+              font-black transition-all duration-500 active:scale-95 group/repo
+              bg-white text-gray-900 border border-slate-200 shadow-sm
+              hover:bg-slate-50 hover:border-indigo-500/30 hover:shadow-lg
+              dark:bg-white/5 dark:text-white dark:border-white/10
+              dark:backdrop-blur-xl dark:shadow-[0_0_20px_rgba(0,0,0,0.3)]
+              dark:hover:bg-white/10 dark:hover:border-cyan-500/50
+              dark:hover:shadow-[0_0_25px_rgba(6,182,212,0.25)]
+            "
+          >
+            <ExternalLink
+              size={20}
+              className="transition-transform duration-500 group-hover/repo:rotate-12 group-hover/repo:text-cyan-500"
+            />
+            <span className="hidden lg:inline text-sm tracking-widest uppercase">
+              Source Code
+            </span>
+            <div className="absolute inset-0 rounded-2xl opacity-0 group-hover/repo:opacity-100 transition-opacity duration-700 pointer-events-none overflow-hidden">
+              <div className="absolute inset-0 translate-x-[-100%] group-hover/repo:animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+            </div>
+          </a>
+        )}
+
+        <button
+          onClick={handleShare}
+          className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center transition-all active:scale-90 text-slate-500 dark:text-slate-400 hover:text-indigo-500"
+        >
+          {copied ? (
+            <Check className="text-emerald-500" />
+          ) : (
+            <Share2 size={20} />
+          )}
+        </button>
+      </div>
     </div>
+  );
+
+  return (
+    <>
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
+      <div className="h-screen w-full bg-slate-50 dark:bg-[#030407] text-slate-900 dark:text-white flex flex-col overflow-hidden transition-colors duration-500 relative">
+        <Navbar />
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-indigo-500/10 dark:bg-indigo-600/10 rounded-full blur-[120px] animate-pulse" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-rose-500/10 dark:bg-rose-600/10 rounded-full blur-[140px]" />
+        </div>
+
+        <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-4 lg:p-8 pt-20 lg:pt-24 min-h-0">
+          <div className="w-full max-w-[1400px] mb-4 shrink-0 px-2 flex justify-start">
+            <button
+              onClick={() => navigate("/projects")}
+              className="group flex items-center gap-2 px-5 py-2 rounded-full bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-white dark:hover:bg-white/10 hover:border-indigo-500/50 backdrop-blur-xl transition-all duration-300 shadow-sm"
+            >
+              <ArrowLeft
+                size={16}
+                className="text-slate-500 group-hover:text-indigo-500 transition-colors"
+              />
+              <span className="text-sm font-bold text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white">
+                Back
+              </span>
+            </button>
+          </div>
+
+          <div className="w-full max-w-[1400px] h-[78vh] flex flex-col lg:flex-row bg-white/90 dark:bg-[#0b0b12]/95 backdrop-blur-3xl rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-2xl dark:shadow-[0_0_80px_-20px_rgba(0,0,0,0.8)] overflow-hidden relative">
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent opacity-50 z-20"></div>
+
+            {/* Left Side - Media */}
+            <div className="w-full lg:w-[55%] bg-slate-200/50 dark:bg-black/40 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-white/5 relative flex flex-col h-[45%] lg:h-full overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-8 no-scrollbar">
+                {renderMediaContent()}
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-slate-200/80 dark:from-black/80 to-transparent pointer-events-none transition-opacity duration-300" />
+            </div>
+
+            {/* Right Side - Details */}
+            <div className="w-full lg:w-[45%] flex flex-col h-[55%] lg:h-full bg-transparent relative min-h-0">
+              <div className="p-8 lg:p-10 border-b border-slate-200 dark:border-white/5 shrink-0">
+                <div className="flex items-center gap-5 mb-6">
+                  <div className="relative">
+                    <div className="absolute -inset-1 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl opacity-40 blur group-hover:opacity-70 transition duration-500"></div>
+                    <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 dark:bg-[#1a1a23] border border-slate-200 dark:border-white/10 shadow-inner">
+                      <Avatar user={project.user} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                      {uName}
+                    </h3>
+                    <div className="flex items-center gap-3 text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">
+                      <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400">
+                        <Layers size={12} /> {uDept}
+                      </span>
+                      <span className="flex items-center gap-1.5 opacity-60">
+                        <Calendar size={12} /> {postDate}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <h1 className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-br dark:from-white dark:to-slate-500 leading-tight tracking-tight">
+                  {project.title}
+                </h1>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-8 lg:p-10 min-h-0 no-scrollbar">
+                <p className="text-slate-600 dark:text-slate-300 font-medium leading-relaxed whitespace-pre-wrap">
+                  {project.description || "No project description available."}
+                </p>
+              </div>
+              {renderActionButtons()}
+            </div>
+          </div>
+        </main>
+      </div>
+    </>
   );
 };
 
 export default ProjectDetails;
-
-// Helper Avatar
-const Avatar = ({ user }) => {
-  const name = user?.name || "?";
-  return (
-    <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-      {user?.profilePic ? (
-        <img
-          src={user.profilePic}
-          alt={name}
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <span className="font-black text-slate-400 text-lg">
-          {name.charAt(0).toUpperCase()}
-        </span>
-      )}
-    </div>
-  );
-};

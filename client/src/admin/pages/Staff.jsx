@@ -183,11 +183,16 @@ const Staff = () => {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
-            <h1 className="text-5xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-4">
-              <span className="p-3 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 shadow-inner">
-                <Users className="w-10 h-10" />
+            <h1 className="text-4xl font-black tracking-tight flex items-center gap-3">
+              {/* Icon Container with Bounce Hover */}
+              <span className="cursor-pointer p-2.5 rounded-xl bg-gradient-to-br from-rose-400 to-pink-600 text-white shadow-lg shadow-rose-500/30 transition-all duration-300 ease-out hover:scale-110 hover:-rotate-6 hover:shadow-rose-500/50">
+                <Users className="w-6 h-6" />
               </span>
-              Faculty Hub
+
+              {/* Glossy Text */}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 via-fuchsia-600 to-purple-600 dark:from-rose-300 dark:via-fuchsia-300 dark:to-purple-300 drop-shadow-sm">
+                Faculty Hub
+              </span>
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-3 text-lg font-medium">
               Manage profiles, roles, and academic details for staff members.

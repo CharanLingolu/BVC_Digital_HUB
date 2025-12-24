@@ -8,7 +8,6 @@ import {
   Briefcase,
   LogOut,
   ShieldCheck,
-  ChevronRight,
 } from "lucide-react";
 
 const AdminNavbar = () => {
@@ -17,7 +16,7 @@ const AdminNavbar = () => {
 
   const logout = () => {
     localStorage.removeItem("adminToken");
-    navigate("/admin/login");
+    navigate("/");
   };
 
   // Helper for consistent link styling
@@ -54,7 +53,8 @@ const AdminNavbar = () => {
               navigate("/admin/dashboard");
             }}
           >
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-orange-600 shadow-lg shadow-rose-500/20 group-hover:scale-105 transition-transform duration-300">
+            {/* ✅ FIXED: Added group-hover:-rotate-12 for subtle left rotation */}
+            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-orange-600 shadow-lg shadow-rose-500/20 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300">
               <ShieldCheck className="text-white w-6 h-6" />
             </div>
             <h1 className="font-bold text-xl tracking-tight text-slate-900 dark:text-white transition-colors">
@@ -134,7 +134,6 @@ const AdminNavbar = () => {
       >
         <div className="bg-white/95 dark:bg-[#0d1117]/95 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-white dark:border-white/5 p-6 overflow-hidden">
           <div className="space-y-6">
-            {/* Admin Links Grid */}
             <div className="grid grid-cols-2 gap-3">
               {[
                 {
@@ -192,7 +191,6 @@ const AdminNavbar = () => {
               ))}
             </div>
 
-            {/* Logout Button */}
             <button
               onClick={() => {
                 setOpen(false);

@@ -17,6 +17,7 @@ import Jobs from "./pages/Jobs";
 import Onboarding from "./pages/Onboarding";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProjectDetails from "./pages/ProjectDetails";
+import EditProject from "./pages/EditProject";
 import StaffDetails from "./pages/StaffDetails";
 import EventDetails from "./pages/EventDetails";
 import JobApply from "./pages/JobApply";
@@ -32,189 +33,227 @@ import AdminJobs from "./admin/pages/Jobs";
 import UserDetails from "./admin/pages/UserDetails";
 
 function App() {
-  // ✅ SINGLE SOURCE OF TRUTH FOR THEME
-  const [dark, setDark] = useState(false);
+  // ✅ PERSISTENT THEME: Checks localStorage so the theme stays saved
+  const [dark, setDark] = useState(() => {
+    return localStorage.getItem("theme") === "dark";
+  });
 
-  // ✅ Apply theme to <html>
+  // ✅ Apply theme and save preference
   useEffect(() => {
     const html = document.documentElement;
-    dark ? html.classList.add("dark") : html.classList.remove("dark");
+    if (dark) {
+      html.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      html.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
   }, [dark]);
 
   return (
     <BrowserRouter>
-      {/* 🌙 GLOBAL THEME TOGGLE */}
-      <button
-        onClick={() => setDark(!dark)}
-        className="
-          fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full
-          bg-white dark:bg-slate-800
-          border border-slate-200 dark:border-slate-700
-          shadow-lg flex items-center justify-center text-xl
-        "
+      {/* 🌊 THEME LIQUID WRAPPER: This makes the background shift smoothly */}
+      <div
+        className={`theme-liquid-transition min-h-screen ${
+          dark ? "dark bg-[#030407]" : "bg-slate-50"
+        }`}
       >
-        {dark ? "☀️" : "🌙"}
-      </button>
+        {/* 🌙 GLOBAL FANCY TOGGLE */}
+        <button
+          onClick={() => setDark(!dark)}
+          className="fixed bottom-8 right-8 z-[100] w-16 h-16 rounded-full
+                     bg-white/40 dark:bg-black/40 backdrop-blur-3xl
+                     border border-white/40 dark:border-white/10
+                     flex items-center justify-center text-2xl cursor-pointer
+                     shadow-[0_20px_50px_rgba(0,0,0,0.1),_inset_0_0_15px_rgba(255,255,255,0.2)]
+                     dark:shadow-[0_20px_50px_rgba(0,0,0,0.8),_inset_0_0_15px_rgba(255,255,255,0.05)]
+                     transition-all duration-1000 ease-in-out hover:scale-110 active:scale-90 group"
+        >
+          {/* Shine Effect */}
+          <div className="absolute inset-0 rounded-full overflow-hidden">
+            <div className="absolute top-[-100%] left-[-100%] w-[300%] h-[300%] bg-gradient-to-br from-white/20 via-transparent to-transparent rotate-45 group-hover:top-[-50%] group-hover:left-[-50%] transition-all duration-1000" />
+          </div>
 
-      {/* ✅ TOAST THEME SYNCED */}
-      <ToastContainer position="top-center" theme={dark ? "dark" : "light"} />
+          {/* Cinematic Icon Rotation */}
+          <div
+            className={`relative z-10 transition-all duration-[1200ms] cubic-bezier(0.4, 0, 0.2, 1) ${
+              dark ? "rotate-0 scale-100" : "rotate-[360deg] scale-110"
+            }`}
+          >
+            {dark ? (
+              <span className="drop-shadow-[0_0_12px_rgba(251,191,36,0.8)]">
+                ☀️
+              </span>
+            ) : (
+              <span className="drop-shadow-[0_0_12px_rgba(129,140,248,0.8)]">
+                🌙
+              </span>
+            )}
+          </div>
+        </button>
 
-      <Routes>
-        {/* ================= PUBLIC ================= */}
-        <Route path="/" element={<Landing />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/otp" element={<OTP />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/onboarding" element={<Onboarding />} />
-
-        {/* ================= ADMIN ================= */}
-        <Route path="/admin/login" element={<AdminLogin />} />
-
-        <Route
-          path="/admin/dashboard"
-          element={
-            <AdminProtectedRoute>
-              <AdminDashboard />
-            </AdminProtectedRoute>
-          }
+        <ToastContainer
+          position="top-center"
+          autoClose={1500}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          pauseOnFocusLoss={false}
+          pauseOnHover={false}
+          draggable
+          theme={dark ? "dark" : "light"}
         />
 
-        <Route
-          path="/admin/users"
-          element={
-            <AdminProtectedRoute>
-              <AdminUsers />
-            </AdminProtectedRoute>
-          }
-        />
+        <Routes>
+          {/* ================= PUBLIC ================= */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/otp" element={<OTP />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/onboarding" element={<Onboarding />} />
 
-        <Route
-          path="/admin/users/:id"
-          element={
-            <AdminProtectedRoute>
-              <UserDetails />
-            </AdminProtectedRoute>
-          }
-        />
+          {/* ================= ADMIN ================= */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminProtectedRoute>
+                <AdminDashboard />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <AdminProtectedRoute>
+                <AdminUsers />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users/:id"
+            element={
+              <AdminProtectedRoute>
+                <UserDetails />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/staff"
+            element={
+              <AdminProtectedRoute>
+                <AdminStaff />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/events"
+            element={
+              <AdminProtectedRoute>
+                <AdminEvents />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/jobs"
+            element={
+              <AdminProtectedRoute>
+                <AdminJobs />
+              </AdminProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/admin/staff"
-          element={
-            <AdminProtectedRoute>
-              <AdminStaff />
-            </AdminProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin/events"
-          element={
-            <AdminProtectedRoute>
-              <AdminEvents />
-            </AdminProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin/jobs"
-          element={
-            <AdminProtectedRoute>
-              <AdminJobs />
-            </AdminProtectedRoute>
-          }
-        />
-
-        {/* ================= USER PROTECTED ================= */}
-        <Route
-          path="/home"
-          element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/projects"
-          element={
-            <ProtectedRoute>
-              <Projects />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/projects/:id"
-          element={
-            <ProtectedRoute>
-              <ProjectDetails />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/staff"
-          element={
-            <ProtectedRoute>
-              <Staff />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/staff/:id"
-          element={
-            <ProtectedRoute>
-              <StaffDetails />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/events"
-          element={
-            <ProtectedRoute>
-              <Events />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/events/:id"
-          element={
-            <ProtectedRoute>
-              <EventDetails />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/jobs"
-          element={
-            <ProtectedRoute>
-              <Jobs />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/jobs/:id/apply"
-          element={
-            <ProtectedRoute>
-              <JobApply />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+          {/* ================= USER PROTECTED ================= */}
+          <Route
+            path="/home"
+            element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects"
+            element={
+              <ProtectedRoute>
+                <Projects />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/edit/:id"
+            element={
+              <ProtectedRoute>
+                <EditProject />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:id"
+            element={
+              <ProtectedRoute>
+                <ProjectDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/staff"
+            element={
+              <ProtectedRoute>
+                <Staff />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/staff/:id"
+            element={
+              <ProtectedRoute>
+                <StaffDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events"
+            element={
+              <ProtectedRoute>
+                <Events />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events/:id"
+            element={
+              <ProtectedRoute>
+                <EventDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/jobs"
+            element={
+              <ProtectedRoute>
+                <Jobs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/jobs/:id/apply"
+            element={
+              <ProtectedRoute>
+                <JobApply />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </div>
     </BrowserRouter>
   );
 }

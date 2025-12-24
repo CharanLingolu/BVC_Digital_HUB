@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import { toast } from "react-toastify";
-import { Pencil, Trash2, Heart, MessageSquare, Share2 } from "lucide-react";
+import { Pencil, Trash2, Heart, User, Layers } from "lucide-react";
 
 const ProjectCard = ({
   project,
@@ -13,198 +13,180 @@ const ProjectCard = ({
 }) => {
   const navigate = useNavigate();
 
-  const [likesCount, setLikesCount] = useState(project.likes?.length || 0);
-  const [isLiked, setIsLiked] = useState(false);
+  // Local state initialized with a safety check
+  const [likes, setLikes] = useState(project?.likes || []);
   const [isLiking, setIsLiking] = useState(false);
 
-  /* ================= SYNC LIKE STATE ================= */
+  // Sync state if parent props change
   useEffect(() => {
-    if (project.likes && currentUserId) {
-      setIsLiked(
-        project.likes.some(
-          (id) => id && id.toString() === currentUserId.toString()
-        )
-      );
-    }
-    setLikesCount(project.likes?.length || 0);
-  }, [project.likes, currentUserId]);
+    setLikes(project?.likes || []);
+  }, [project?.likes]);
 
-  /* ================= LIKE ================= */
+  // CRITICAL FIX: Ensure both IDs are converted to Strings for comparison
+  const safeUserId = currentUserId ? String(currentUserId) : null;
+  const isLiked = safeUserId && likes.some((uid) => String(uid) === safeUserId);
+  const likesCount = likes.length;
+
   const handleLike = async (e) => {
     e.stopPropagation();
 
-    if (isOwner) return; // 🔒 Owner cannot like own project
-    if (isLiking) return;
-
-    if (!currentUserId) {
-      onUnauthLike?.();
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login to like!");
       return;
     }
 
+    if (isOwner || isLiking) return;
+
     setIsLiking(true);
 
-    const originalLikes = likesCount;
-    const originalLiked = isLiked;
-
-    setIsLiked(!isLiked);
-    setLikesCount((prev) => (isLiked ? prev - 1 : prev + 1));
-
     try {
+      // ✅ Backend is the ONLY source of truth
       const { data } = await API.post(`/projects/${project._id}/like`);
-      setLikesCount(data.likes.length);
-      setIsLiked(
-        data.likes.some(
-          (id) => id && id.toString() === currentUserId.toString()
-        )
-      );
-    } catch {
-      setLikesCount(originalLikes);
-      setIsLiked(originalLiked);
-      toast.error("Like failed", {
-        autoClose: 1500,
-      });
+
+      // Update likes strictly from server response
+      setLikes(data.likes);
+    } catch (err) {
+      console.error(err);
+      toast.error("Like failed");
     } finally {
       setIsLiking(false);
     }
   };
 
-  /* ================= DELETE ================= */
   const handleDelete = async (e) => {
     e.stopPropagation();
     if (!window.confirm("Delete this project?")) return;
-
     try {
       await API.delete(`/projects/${project._id}`);
-      toast.success("Project deleted", {
-        autoClose: 1500,
-      });
+      toast.success("Project deleted");
       refresh?.();
     } catch {
-      toast.error("Delete failed", {
-        autoClose: 1500,
-      });
+      toast.error("Delete failed");
     }
   };
 
-  /* ================= EDIT ================= */
   const handleEdit = (e) => {
     e.stopPropagation();
     navigate(`/projects/edit/${project._id}`);
   };
 
   return (
-    <div
-      onClick={() => navigate(`/projects/${project._id}`)}
-      className="group relative cursor-pointer bg-white dark:bg-[#1e2329] 
-      rounded-3xl p-6 shadow-xl border border-slate-100 dark:border-slate-800 
-      hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden"
-    >
-      {/* Decorative Gradient Background (Subtle) */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+    <>
+      {/* Custom Pulse Animation */}
+      <style>{`
+        @keyframes heartPop {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.4); }
+          100% { transform: scale(1); }
+        }
+        .animate-pop {
+          animation: heartPop 0.4s cubic-bezier(0.17, 0.89, 0.32, 1.49);
+        }
+      `}</style>
 
-      {/* ================= USER INFO (HIDDEN FOR OWNER) ================= */}
-      {!isOwner && (
-        <div className="flex items-center gap-3 mb-5 relative z-10">
-          <div className="relative">
-            <div
-              className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 
-              flex items-center justify-center overflow-hidden border-2 border-white dark:border-[#1e2329] shadow-sm"
-            >
-              {project.user?.profilePic ? (
-                <img
-                  src={project.user.profilePic}
-                  alt="user"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="font-bold text-lg text-blue-600 dark:text-blue-300">
-                  {project.user?.name?.charAt(0) || "U"}
+      <div
+        onClick={() => navigate(`/projects/${project?._id}`)}
+        className="group relative cursor-pointer overflow-hidden rounded-[2.5rem] 
+             bg-white/90 dark:bg-[#0a0a0f]/95 backdrop-blur-3xl 
+             border border-slate-200 dark:border-white/10 
+             shadow-xl flex flex-col h-full min-h-[280px]
+             /* --- LEFT FALL TRANSITION --- */
+             transition-all duration-500 ease-out
+             hover:-translate-y-2 hover:-rotate-1 hover:scale-[1.01]
+             hover:shadow-[10px_20px_50px_-20px_rgba(99,102,241,0.3)]"
+      >
+        <div className="p-8 flex flex-col h-full relative z-10">
+          {/* Creator Header */}
+          {!isOwner && (
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 dark:bg-[#16161a] border border-slate-200 dark:border-white/10 flex items-center justify-center">
+                {project.user?.profilePic ? (
+                  <img
+                    src={project.user.profilePic}
+                    alt="user"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User size={20} className="text-slate-400" />
+                )}
+              </div>
+              <div>
+                <p className="font-bold text-slate-900 dark:text-white text-base truncate leading-none mb-1">
+                  {project.user?.name || "Unknown"}
+                </p>
+                <span className="px-2 py-0.5 rounded-lg bg-indigo-500/10 text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">
+                  {project.user?.department || "CSE"}
                 </span>
-              )}
+              </div>
             </div>
-            {/* Status Indicator (Optional Visual Flair) */}
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-[#1e2329] rounded-full"></div>
-          </div>
+          )}
 
-          <div>
-            <p className="font-bold text-slate-900 dark:text-white text-base leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-              {project.user?.name || "Unknown"}
-            </p>
-            <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-[10px] font-extrabold text-blue-600 dark:text-blue-400 tracking-wide uppercase border border-blue-100 dark:border-blue-800">
-              {project.user?.department || "GENERAL"}
-            </span>
+          <h3 className="text-2xl font-black mb-3 text-slate-900 dark:text-white leading-tight group-hover:text-indigo-500 transition-colors">
+            {project.title}
+          </h3>
+          <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed line-clamp-3 mb-8">
+            {project.description}
+          </p>
+
+          {/* Action Footer */}
+          <div className="mt-auto pt-6 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
+            {!isOwner ? (
+              <button
+                onClick={handleLike}
+                disabled={isLiking}
+                className={`flex items-center gap-2.5 transition-all duration-300 active:scale-90 group/heart 
+    /* --- COLOR LOGIC: Red if liked, Slate to Red-400 on hover if not --- */
+    ${
+      isLiked
+        ? "text-red-500"
+        : "text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400"
+    }`}
+              >
+                <Heart
+                  size={26}
+                  className={`transition-all duration-500 
+      /* --- HOVER EFFECTS: Left Fall + Scale + Stroke Weight --- */
+      group-hover/heart:-rotate-12 
+      group-hover/heart:scale-110
+      group-hover/heart:drop-shadow-[0_0_8px_rgba(239,68,68,0.3)]
+      
+      ${
+        isLiked
+          ? "fill-red-500 stroke-red-500 animate-pop drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]"
+          : "fill-none stroke-current"
+      }`}
+                />
+
+                <span className="font-black text-lg transition-colors duration-300">
+                  {likesCount}
+                </span>
+              </button>
+            ) : (
+              <div className="w-full flex justify-between items-center">
+                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest opacity-60">
+                  Author Tools
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleEdit}
+                    className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-500 hover:bg-indigo-500 hover:text-white transition-all"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-500 hover:bg-rose-500 hover:text-white transition-all"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
-
-      {/* ================= TITLE ================= */}
-      <h3 className="text-xl font-black mb-3 text-slate-900 dark:text-white leading-tight group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
-        {project.title}
-      </h3>
-
-      {/* ================= DESCRIPTION ================= */}
-      <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed line-clamp-3 mb-6 font-medium">
-        {project.description}
-      </p>
-
-      {/* ================= ACTIONS ================= */}
-      <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-        {/* LIKE (HIDDEN FOR OWNER) */}
-        {!isOwner ? (
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handleLike}
-              disabled={isLiking}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 ${
-                isLiked
-                  ? "bg-red-50 dark:bg-red-900/20 text-red-500"
-                  : "bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500"
-              }`}
-            >
-              <Heart
-                size={18}
-                className={`transition-transform duration-300 ${
-                  isLiked ? "fill-current scale-110" : "scale-100"
-                }`}
-              />
-              <span className="font-bold text-sm">{likesCount}</span>
-            </button>
-
-            {/* Placeholder for Comments/Share for future expansion, adds to 'flashy' look */}
-            <button className="text-slate-400 hover:text-blue-500 transition-colors">
-              <MessageSquare size={18} />
-            </button>
-            <button className="text-slate-400 hover:text-green-500 transition-colors">
-              <Share2 size={18} />
-            </button>
-          </div>
-        ) : (
-          /* OWNER ACTIONS - VISIBLE ONLY IF OWNER */
-          <div className="w-full flex justify-between items-center">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              My Project
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={handleEdit}
-                className="p-2 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
-                title="Edit Project"
-              >
-                <Pencil size={16} strokeWidth={2.5} />
-              </button>
-
-              <button
-                onClick={handleDelete}
-                className="p-2 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
-                title="Delete Project"
-              >
-                <Trash2 size={16} strokeWidth={2.5} />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
-    </div>
+    </>
   );
 };
 

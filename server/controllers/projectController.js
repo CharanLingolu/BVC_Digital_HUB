@@ -1,4 +1,5 @@
 import Project from "../models/Project.js";
+import mongoose from "mongoose";
 
 // CREATE
 export const createProject = async (req, res) => {
@@ -9,11 +10,11 @@ export const createProject = async (req, res) => {
       title: req.body.title,
       description: req.body.description,
       repoLink: req.body.repoLink,
-      techStack: req.body.techStack?.split(",") || [],
+      techStack: req.body.techStack ? req.body.techStack.split(",") : [],
       media,
     });
     res.status(201).json({ message: "Project created", project });
-  } catch {
+  } catch (err) {
     res.status(500).json({ message: "Creation failed" });
   }
 };
@@ -21,13 +22,18 @@ export const createProject = async (req, res) => {
 // GET BY ID
 export const getProjectById = async (req, res) => {
   try {
+    // Safety check: validate ID format
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid Project ID" });
+    }
+
     const project = await Project.findById(req.params.id).populate(
       "user",
       "name email department profilePic"
     );
     if (!project) return res.status(404).json({ message: "Not found" });
     res.json(project);
-  } catch {
+  } catch (err) {
     res.status(500).json({ message: "Error fetching project" });
   }
 };
@@ -39,7 +45,7 @@ export const getAllProjects = async (req, res) => {
       .populate("user", "name email department profilePic")
       .sort({ createdAt: -1 });
     res.status(200).json(projects);
-  } catch {
+  } catch (err) {
     res.status(500).json({ message: "Failed to fetch projects" });
   }
 };
@@ -51,7 +57,7 @@ export const getMyProjects = async (req, res) => {
       createdAt: -1,
     });
     res.status(200).json(projects);
-  } catch {
+  } catch (err) {
     res.status(500).json({ message: "Error fetching user projects" });
   }
 };
@@ -68,30 +74,43 @@ export const deleteProject = async (req, res) => {
 
     await project.deleteOne();
     res.status(200).json({ message: "Deleted successfully" });
-  } catch {
+  } catch (err) {
     res.status(500).json({ message: "Deletion failed" });
   }
 };
 
-// LIKE / UNLIKE
+// LIKE / UNLIKE — FIXED LOGIC
 export const likeProject = async (req, res) => {
   try {
-    const project = await Project.findById(req.params.id);
-    if (!project) return res.status(404).json({ message: "Project not found" });
+    const userId = req.user?._id; // Ensure user exists
+    const projectId = req.params.id;
 
-    const userId = req.user._id.toString();
-    const isLiked = project.likes.some((id) => id.toString() === userId);
-
-    if (isLiked) {
-      project.likes = project.likes.filter((id) => id.toString() !== userId);
-    } else {
-      project.likes.push(userId);
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: Please login" });
     }
 
-    await project.save();
-    res.status(200).json({ likes: project.likes });
-  } catch {
-    res.status(500).json({ message: "Like failed" });
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      return res.status(400).json({ message: "Invalid ID format" });
+    }
+
+    const project = await Project.findById(projectId);
+    if (!project) return res.status(404).json({ message: "Project not found" });
+
+    // Check if already liked
+    const alreadyLiked = project.likes.includes(userId);
+
+    const updatedProject = await Project.findByIdAndUpdate(
+      projectId,
+      alreadyLiked
+        ? { $pull: { likes: userId } }
+        : { $addToSet: { likes: userId } },
+      { new: true }
+    );
+
+    res.status(200).json({ likes: updatedProject.likes });
+  } catch (err) {
+    console.error("Like Error:", err);
+    res.status(500).json({ message: "Like action failed" });
   }
 };
 
@@ -105,22 +124,36 @@ export const updateProject = async (req, res) => {
       return res.status(403).json({ message: "Not authorized" });
     }
 
-    const { title, description, repoLink, removedMedia = [] } = req.body;
+    const {
+      title,
+      description,
+      repoLink,
+      techStack,
+      removedMedia = [],
+    } = req.body;
 
     if (title) project.title = title;
     if (description) project.description = description;
     if (repoLink) project.repoLink = repoLink;
 
-    if (Array.isArray(removedMedia)) {
+    // Fix: Handle techStack update
+    if (techStack) {
+      project.techStack = techStack.split(",");
+    }
+
+    if (Array.isArray(removedMedia) && removedMedia.length > 0) {
       project.media = project.media.filter((m) => !removedMedia.includes(m));
     }
 
     const newMedia = req.files?.map((f) => f.path) || [];
-    project.media.push(...newMedia);
+    if (newMedia.length > 0) {
+      project.media.push(...newMedia);
+    }
 
     await project.save();
     res.status(200).json(project);
-  } catch {
+  } catch (err) {
+    console.error("Update Error:", err);
     res.status(500).json({ message: "Update failed" });
   }
 };

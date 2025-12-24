@@ -3,30 +3,26 @@ import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import Navbar from "../components/Navbar";
 import ProjectCard from "../components/ProjectCard";
+import { Search, Filter, Rocket, Layers, Sparkles } from "lucide-react";
 
 const Projects = () => {
   const navigate = useNavigate();
-
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [department, setDepartment] = useState("");
 
-  /* ================= 🔐 USER (LOGIC UNCHANGED) ================= */
+  /* ================= 🔐 USER LOGIC (STRICTLY PRESERVED) ================= */
   const getCurrentUserId = () => {
     try {
       const raw =
         localStorage.getItem("user") ||
         localStorage.getItem("userInfo") ||
         localStorage.getItem("authUser");
-
       if (!raw) return null;
-
       const parsed = JSON.parse(raw);
-
       if (parsed?.user?._id) return parsed.user._id.toString();
       if (parsed?._id) return parsed._id.toString();
-
       return null;
     } catch {
       return null;
@@ -35,20 +31,17 @@ const Projects = () => {
 
   const [currentUserId, setCurrentUserId] = useState(getCurrentUserId());
 
-  /* ================= 🔄 SYNC USER STATE ================= */
   useEffect(() => {
     const syncUser = () => setCurrentUserId(getCurrentUserId());
-
     window.addEventListener("storage", syncUser);
     window.addEventListener("userUpdated", syncUser);
-
     return () => {
       window.removeEventListener("storage", syncUser);
       window.removeEventListener("userUpdated", syncUser);
     };
   }, []);
 
-  /* ================= 📡 FETCH PROJECTS ================= */
+  /* ================= 📡 FETCH DATA ================= */
   useEffect(() => {
     API.get("/projects")
       .then((res) => {
@@ -62,209 +55,176 @@ const Projects = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  /* ================= 🔍 FILTER ================= */
+  /* ================= 🔍 FILTERING ================= */
   const filteredProjects = projects.filter((project) => {
     const text = search.toLowerCase();
     const uName = project.user?.name?.toLowerCase() || "";
     const uDept = project.user?.department || project.user?.dept || "";
-
     return (
       (project.title.toLowerCase().includes(text) || uName.includes(text)) &&
       (department === "" || uDept === department)
     );
   });
 
-  /* ================= 🖥️ MODERN UI ================= */
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#090c10] text-slate-800 dark:text-slate-200 font-sans selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#030407] text-slate-800 dark:text-slate-200 font-sans selection:bg-indigo-500/30 overflow-x-hidden">
       <Navbar />
 
-      {/* Background Decorative Grids (Matches Home Page) */}
+      {/* --- GLOSSY BACKGROUND LAYER --- */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-        <div className="absolute top-0 left-0 w-full h-full bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+        <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-indigo-600/10 dark:bg-indigo-500/10 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-cyan-600/10 dark:bg-cyan-500/10 rounded-full blur-[120px]" />
+        <div className="absolute top-0 left-0 w-full h-full bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:32px_32px]"></div>
       </div>
 
-      <div className="h-24" />
+      <div className="h-28" />
 
-      <main className="relative z-10 max-w-7xl mx-auto px-6 pb-20">
-        {/* HEADER */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
-              Student{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-cyan-500">
-                Projects
+      <main className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+        {/* --- HERO SECTION --- */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-16">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold tracking-widest uppercase">
+              <Sparkles size={14} /> Showcase Portal
+            </div>
+            <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-slate-900 dark:text-white leading-none">
+              Building the <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 animate-gradient-x">
+                Future Today.
               </span>
             </h1>
-            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl">
-              Explore innovation across campus. Discover what your peers are
-              building.
+            <p className="text-lg text-slate-500 dark:text-slate-400 max-w-xl font-medium leading-relaxed">
+              A curated gallery of engineering excellence. Browse, filter, and
+              connect with the minds behind campus innovation.
             </p>
           </div>
 
-          <div className="hidden md:block">
-            <div className="px-4 py-2 bg-white/50 dark:bg-[#161b22]/50 backdrop-blur-md rounded-full border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-500">
-              {projects.length} Total Projects
-            </div>
-          </div>
-        </div>
-
-        {/* SEARCH & FILTER BAR */}
-        <div className="sticky top-24 z-30 mb-10 p-2 rounded-2xl bg-white/70 dark:bg-[#161b22]/70 backdrop-blur-xl border border-slate-200/60 dark:border-slate-800/60 shadow-lg shadow-indigo-500/5">
-          <div className="flex flex-col md:flex-row gap-2">
-            {/* Search Input */}
-            <div className="relative flex-1 group">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <svg
-                  className="h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
+          {/* Stats Card */}
+          <div className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+            <div className="relative flex items-center gap-6 px-8 py-6 bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl border border-white/20 dark:border-slate-800 rounded-3xl shadow-xl">
+              <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-500">
+                <Rocket size={32} />
               </div>
-              <input
-                type="text"
-                placeholder="Search titles, students..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-transparent
-                           text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
-                           focus:bg-white dark:focus:bg-[#0d1117]
-                           focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
-              />
-            </div>
-
-            {/* Department Select */}
-            <div className="relative w-full md:w-64 group">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <svg
-                  className="h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                  />
-                </svg>
-              </div>
-              <select
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                className="w-full pl-11 pr-10 py-3.5 rounded-xl bg-transparent appearance-none
-                           text-slate-900 dark:text-white cursor-pointer
-                           focus:bg-white dark:focus:bg-[#0d1117]
-                           focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
-              >
-                <option value="" className="bg-white dark:bg-[#161b22]">
-                  All Departments
-                </option>
-                <option value="CSE" className="bg-white dark:bg-[#161b22]">
-                  CSE
-                </option>
-                <option value="ECE" className="bg-white dark:bg-[#161b22]">
-                  ECE
-                </option>
-                <option value="EEE" className="bg-white dark:bg-[#161b22]">
-                  EEE
-                </option>
-                <option value="MECH" className="bg-white dark:bg-[#161b22]">
-                  MECH
-                </option>
-                <option value="CIVIL" className="bg-white dark:bg-[#161b22]">
-                  CIVIL
-                </option>
-              </select>
-              {/* Custom Chevron */}
-              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                <svg
-                  className="h-4 w-4 text-slate-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+              <div>
+                <p className="text-3xl font-black text-slate-900 dark:text-white leading-none">
+                  {projects.length}
+                </p>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mt-1">
+                  Live Projects
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* CONTENT AREA */}
+        {/* --- STICKY FILTER BAR --- */}
+        <div className="sticky top-24 z-40 mb-12">
+          <div className="p-2 rounded-[2rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl border border-white/40 dark:border-slate-800/60 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
+            <div className="flex flex-col md:flex-row gap-3">
+              {/* Modern Search */}
+              <div className="relative flex-1 group">
+                <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                  <Search size={18} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search by project title or student name..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-14 pr-6 py-4 rounded-2xl bg-white/50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all font-medium"
+                />
+              </div>
+
+              {/* Modern Select */}
+              <div className="relative md:w-72">
+                <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-slate-400">
+                  <Filter size={18} />
+                </div>
+                <select
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  className="w-full pl-14 pr-10 py-4 rounded-2xl bg-white/50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white cursor-pointer appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-bold"
+                >
+                  <option value="">All Departments</option>
+                  {["CSE", "ECE", "EEE", "MECH", "CIVIL"].map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400">
+                  <Layers size={16} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* --- PROJECT GRID --- */}
         {loading ? (
-          /* Modern Skeleton Loader */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <div
                 key={n}
-                className="h-80 rounded-2xl bg-white/50 dark:bg-[#161b22]/50 border border-slate-200 dark:border-slate-800 animate-pulse"
+                className="h-[420px] rounded-[2.5rem] bg-white/20 dark:bg-slate-900/20 border border-white/20 dark:border-slate-800 animate-pulse overflow-hidden"
               >
-                <div className="h-48 bg-slate-200 dark:bg-slate-800 rounded-t-2xl w-full" />
-                <div className="p-4 space-y-3">
-                  <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
-                  <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
+                <div className="h-52 bg-slate-200/50 dark:bg-slate-800/50 w-full" />
+                <div className="p-8 space-y-4">
+                  <div className="h-8 bg-slate-200/50 dark:bg-slate-800/50 rounded-xl w-3/4" />
+                  <div className="h-4 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg w-full" />
+                  <div className="h-4 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg w-1/2" />
                 </div>
               </div>
             ))}
           </div>
         ) : filteredProjects.length === 0 ? (
-          /* Modern Empty State */
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
-              <svg
-                className="h-10 w-10 text-slate-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                />
-              </svg>
+          <div className="flex flex-col items-center justify-center py-32 text-center">
+            <div className="relative mb-8">
+              <div className="absolute inset-0 bg-indigo-500 rounded-full blur-3xl opacity-20 animate-pulse"></div>
+              <div className="relative w-24 h-24 bg-white dark:bg-slate-900 rounded-3xl flex items-center justify-center shadow-2xl border border-white/20 dark:border-slate-800">
+                <Search size={40} className="text-slate-400" />
+              </div>
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-              No projects found
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">
+              No Projects Found
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 max-w-sm">
-              We couldn't find anything matching "{search}" in{" "}
-              {department || "all departments"}. Try adjusting your filters.
+            <p className="text-slate-500 dark:text-slate-400 max-w-sm font-medium">
+              We couldn't find matches for{" "}
+              <span className="text-indigo-500">"{search}"</span>. Try a
+              different keyword or department.
             </p>
           </div>
         ) : (
-          /* Project Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {filteredProjects.map((project) => (
               <div
                 key={project._id}
-                className="transform hover:scale-[1.02] transition-transform duration-300"
+                className="group relative transition-all duration-500 hover:-translate-y-2"
               >
+                {/* Visual Card Wrapper (Assuming ProjectCard uses its own glass styles) */}
                 <ProjectCard project={project} currentUserId={currentUserId} />
               </div>
             ))}
           </div>
         )}
       </main>
+
+      {/* Custom Styles for Animation */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        @keyframes gradient-x {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        .animate-gradient-x {
+          background-size: 200% 200%;
+          animation: gradient-x 5s ease infinite;
+        }
+      `,
+        }}
+      />
     </div>
   );
 };

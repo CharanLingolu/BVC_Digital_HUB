@@ -105,3 +105,40 @@
     @apply focus:ring-2 focus:ring-indigo-500/50;
   }
 }
+
+/* ================= THEME TRANSITION FIX (NO GHOSTING) ================= */
+
+/* 1. Universal Slow Transition for Colors ONLY */
+.theme-liquid-transition *,
+.theme-liquid-transition *:before,
+.theme-liquid-transition *:after {
+  /* box-shadow is EXCLUDED here to stop the extra shadow trail */
+  transition: background-color 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+    color 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+    text-decoration-color 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+    fill 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+    stroke 1.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 2. Targeted Fast Transition for Shadows */
+.theme-liquid-transition .shadow-2xl,
+.theme-liquid-transition .shadow-sm,
+.theme-liquid-transition [class*="shadow-"] {
+  transition: box-shadow 0.3s ease-in-out !important;
+}
+
+/* Heart Pop Animation */
+@keyframes heartPop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}

@@ -57,9 +57,14 @@ const Navbar = () => {
             className="flex items-center gap-3 cursor-pointer"
             onClick={() => navigate("/")}
           >
-            <div className="relative w-12 h-12 flex items-center justify-center">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl rotate-3 shadow-lg" />
-              <span className="relative z-10 text-white font-black text-lg">
+            <div className="group relative w-12 h-12 flex items-center justify-center cursor-pointer transition-transform duration-500">
+              <div
+                className="absolute inset-0 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl rotate-3 shadow-lg 
+                  transition-all duration-700 ease-in-out 
+                  group-hover:rotate-[360deg] group-hover:scale-110 group-hover:shadow-indigo-500/50"
+              />
+
+              <span className="relative z-10 text-white font-black text-lg transition-transform duration-500 group-hover:scale-110">
                 BVC
               </span>
             </div>

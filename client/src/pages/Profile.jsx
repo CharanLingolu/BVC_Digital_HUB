@@ -3,7 +3,20 @@ import API from "../services/api";
 import Navbar from "../components/Navbar";
 import ProjectCard from "../components/ProjectCard";
 import { toast } from "react-toastify";
-import { Camera, Upload, X, Save, Edit3, Plus, User } from "lucide-react";
+import {
+  Camera,
+  Upload,
+  X,
+  Save,
+  Edit3,
+  Plus,
+  User,
+  Github,
+  Type,
+  FileText,
+  Image as ImageIcon,
+  Loader2,
+} from "lucide-react";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -66,12 +79,11 @@ const Profile = () => {
     fetchMyProjects();
   }, []);
 
-  /* ================= UPDATE PROFILE (FIXED FOR REAL) ================= */
+  /* ================= UPDATE PROFILE ================= */
   const handleUpdate = async (e) => {
     e.preventDefault();
 
     try {
-      // ---------- CASE 1: NO IMAGE → SEND JSON ----------
       if (!profilePic) {
         const payload = {
           department: formData.department,
@@ -85,16 +97,13 @@ const Profile = () => {
         };
 
         await API.put("/users/me", payload);
-
         toast.success("Profile updated successfully ✅", { autoClose: 1500 });
         setEditing(false);
         await fetchProfile();
         return;
       }
 
-      // ---------- CASE 2: IMAGE EXISTS → SEND FORMDATA ----------
       const data = new FormData();
-
       data.append("department", formData.department);
       data.append("year", formData.year);
       data.append("rollNumber", formData.rollNumber);
@@ -151,7 +160,6 @@ const Profile = () => {
     }
   };
 
-  /* ================= 🖥️ MODERN UI ================= */
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#090c10] text-slate-800 dark:text-slate-200 font-sans selection:bg-indigo-500/30 overflow-x-hidden">
       <Navbar />
@@ -271,13 +279,9 @@ const Profile = () => {
                           <p className="text-slate-700 dark:text-slate-300 font-semibold">
                             {(() => {
                               if (!user.skills) return "No skills listed yet.";
-
-                              // Case 1: already an array
                               if (Array.isArray(user.skills)) {
                                 return user.skills.join(", ");
                               }
-
-                              // Case 2: string like ["React","NodeJs","Python"]
                               if (typeof user.skills === "string") {
                                 try {
                                   const parsed = JSON.parse(user.skills);
@@ -286,13 +290,11 @@ const Profile = () => {
                                   }
                                   return user.skills;
                                 } catch {
-                                  // fallback: remove brackets & quotes manually
                                   return user.skills
                                     .replace(/[\[\]"]/g, "")
                                     .replace(/\s*,\s*/g, ", ");
                                 }
                               }
-
                               return "No skills listed yet.";
                             })()}
                           </p>
@@ -431,39 +433,52 @@ const Profile = () => {
         </section>
       </main>
 
-      {/* ================= ADD PROJECT MODAL ================= */}
+      {/* ================= REDESIGNED CREATE PROJECT MODAL ================= */}
       {showProjectModal && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#161b22] rounded-3xl w-full max-w-xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh] my-auto">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-[#0d1117]/50 sticky top-0 z-10 rounded-t-3xl">
-              <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">
-                Create New Project
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          {/* Dark Overlay */}
+          <div
+            className="absolute inset-0 bg-black/60 dark:bg-black/80 transition-opacity"
+            onClick={() => setShowProjectModal(false)}
+          />
+
+          <div className="relative w-full max-w-2xl bg-white dark:bg-[#13151f] rounded-[2rem] border border-slate-200 dark:border-white/10 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="p-8 pb-4 flex items-center justify-between border-b border-slate-100 dark:border-white/5">
+              <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-600 dark:from-indigo-400 dark:via-cyan-400 dark:to-emerald-400">
+                New Project
               </h2>
               <button
                 onClick={() => setShowProjectModal(false)}
-                className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors"
+                className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-500 dark:text-white transition-colors"
               >
-                <X className="w-5 h-5 text-slate-500" />
+                <X size={20} />
               </button>
             </div>
 
-            <div className="p-6 space-y-5 overflow-y-auto flex-1">
-              <Input
-                label="Project Title"
-                placeholder="e.g. AI Plant Disease Detector"
-                value={projectForm.title}
-                onChange={(e) =>
-                  setProjectForm({ ...projectForm, title: e.target.value })
-                }
-              />
+            {/* Scrollable Form Area */}
+            <div className="p-8 overflow-y-auto custom-scrollbar">
+              {/* Title Input */}
+              <div className="mb-6">
+                <label className="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-3">
+                  <Type size={14} /> Project Title
+                </label>
+                <input
+                  value={projectForm.title}
+                  onChange={(e) =>
+                    setProjectForm({ ...projectForm, title: e.target.value })
+                  }
+                  className="w-full bg-slate-50 dark:bg-[#0B0C15] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-4 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                  placeholder="e.g. AI Content Generator"
+                />
+              </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1">
-                  Description
+              {/* Description Input */}
+              <div className="mb-6">
+                <label className="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-3">
+                  <FileText size={14} /> Description
                 </label>
                 <textarea
-                  className="w-full p-4 h-32 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#0d1117] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all resize-none placeholder:text-slate-400"
-                  placeholder="Describe your project functionality and tech stack..."
                   value={projectForm.description}
                   onChange={(e) =>
                     setProjectForm({
@@ -471,63 +486,80 @@ const Profile = () => {
                       description: e.target.value,
                     })
                   }
+                  className="w-full h-32 bg-slate-50 dark:bg-[#0B0C15] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-4 text-slate-600 dark:text-slate-300 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all leading-relaxed placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-none"
+                  placeholder="Describe what your project does..."
                 />
               </div>
 
-              <Input
-                label="GitHub Repository"
-                placeholder="https://github.com/username/repo"
-                value={projectForm.repoLink}
-                onChange={(e) =>
-                  setProjectForm({ ...projectForm, repoLink: e.target.value })
-                }
-              />
-
-              <div className="pt-2">
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1">
-                  Upload Media
+              {/* Repo Link Input */}
+              <div className="mb-8">
+                <label className="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-3">
+                  <Github size={14} /> Repository Link
                 </label>
-                <div className="relative border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-6 md:p-8 text-center hover:bg-slate-50 dark:hover:bg-[#0d1117] transition-colors">
-                  <Upload className="w-6 h-6 md:w-8 md:h-8 text-slate-400 mx-auto mb-3" />
-                  <p className="text-xs md:text-sm text-slate-500">
-                    Click to upload images or videos
-                  </p>
+                <input
+                  value={projectForm.repoLink}
+                  onChange={(e) =>
+                    setProjectForm({ ...projectForm, repoLink: e.target.value })
+                  }
+                  className="w-full bg-slate-50 dark:bg-[#0B0C15] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-4 text-cyan-600 dark:text-cyan-400 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all font-mono text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                  placeholder="https://github.com/username/project"
+                />
+              </div>
+
+              {/* Media Section */}
+              <div className="mb-8">
+                <label className="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-3">
+                  <ImageIcon size={14} /> Project Media
+                </label>
+
+                <div className="relative group">
                   <input
                     type="file"
                     multiple
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    accept="image/*"
                     onChange={(e) =>
                       setProjectForm({ ...projectForm, files: e.target.files })
                     }
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   />
+                  <div className="p-8 bg-slate-50 dark:bg-[#0B0C15] rounded-2xl border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group-hover:bg-slate-100 dark:group-hover:bg-[#0f111a] group-hover:border-indigo-500/30 transition-all">
+                    <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-500/10 rounded-full flex items-center justify-center mb-3">
+                      <Upload className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-700 dark:text-white">
+                      {projectForm.files.length > 0
+                        ? `${projectForm.files.length} file(s) selected`
+                        : "Click to upload media"}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      JPG, PNG, GIF up to 5MB
+                    </p>
+                  </div>
                 </div>
-                {projectForm.files.length > 0 && (
-                  <p className="mt-2 text-sm text-indigo-500 font-medium">
-                    {projectForm.files.length} files selected
-                  </p>
-                )}
               </div>
             </div>
 
-            <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 bg-slate-50/50 dark:bg-[#0d1117]/50 rounded-b-3xl sticky bottom-0">
+            {/* Footer Buttons */}
+            <div className="p-6 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-[#0d1117]/50 flex gap-4">
               <button
                 onClick={() => setShowProjectModal(false)}
-                className="px-6 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 font-bold hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+                className="flex-1 py-3.5 rounded-xl font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/5 transition-colors"
               >
                 Cancel
               </button>
               <button
-                disabled={uploading}
                 onClick={handleCreateProject}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                disabled={uploading}
+                className="flex-[2] py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold shadow-lg hover:shadow-indigo-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {uploading ? (
                   <>
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Uploading...
+                    <Loader2 className="animate-spin" /> Uploading...
                   </>
                 ) : (
-                  "Post Project"
+                  <>
+                    <Plus size={20} /> Create Project
+                  </>
                 )}
               </button>
             </div>

@@ -31,3 +31,58 @@ export const getJobs = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch jobs" });
   }
 };
+
+export const getEventById = async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+    res.json(event);
+  } catch {
+    res.status(500).json({ message: "Failed to load event" });
+  }
+};
+
+import nodemailer from "nodemailer";
+
+export const applyForJob = async (req, res) => {
+  const { name, email, phone } = req.body;
+
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: `"BVC Digital Hub" <${process.env.MAIL_USER}>`,
+      to: email,
+      subject: "Job Application Submitted Successfully",
+      html: `
+        <h2>Application Received</h2>
+        <p>Dear ${name},</p>
+
+        <p>Thank you for applying through <b>BVC Digital Hub</b>.</p>
+
+        <p>Your application has been submitted successfully.</p>
+
+        <p><b>Contact Number:</b> ${phone}</p>
+
+        <p>Our team will review your profile and contact you if shortlisted.</p>
+
+        <br />
+        <p>Best Regards,<br/>
+        <b>BVC Digital Hub Placement Team</b></p>
+      `,
+    });
+
+    res.json({ message: "Mail sent successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to send email" });
+  }
+};
+

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ ADDED
 import API from "../services/api";
 import Navbar from "../components/Navbar";
 import {
@@ -24,7 +25,6 @@ const Jobs = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  /* ================= SEARCH FILTER ================= */
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) =>
       [job.title, job.company, job.location, job.type]
@@ -38,52 +38,7 @@ const Jobs = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-[#090c10] text-slate-900 dark:text-white font-sans selection:bg-cyan-500/30 transition-colors duration-300 relative overflow-x-hidden">
       <Navbar />
 
-      {/* ================= BACKGROUND EFFECTS ================= */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 dark:opacity-30 mix-blend-soft-light dark:mix-blend-overlay"></div>
-        <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-cyan-500/10 dark:bg-cyan-600/10 rounded-full blur-[120px] animate-pulse-slow" />
-        <div
-          className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-blue-500/10 dark:bg-blue-600/10 rounded-full blur-[120px] animate-pulse-slow"
-          style={{ animationDelay: "2s" }}
-        />
-      </div>
-
       <main className="relative z-10 pt-28 px-6 max-w-7xl mx-auto pb-20">
-        {/* ================= HEADER ================= */}
-        <div className="text-center mb-14 animate-fade-in-up">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 text-xs font-bold uppercase tracking-widest mb-4 border border-cyan-200 dark:border-cyan-700/50">
-            <Briefcase size={14} className="fill-current" /> Career Portal
-          </div>
-
-          <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-cyan-600 to-slate-900 dark:from-white dark:via-cyan-400 dark:to-white tracking-tight mb-6">
-            Find Your Next Role
-          </h1>
-
-          <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            Explore internships, full-time positions, and exclusive placement
-            opportunities curated for you.
-          </p>
-        </div>
-
-        {/* ================= SEARCH BAR (SAME AS EVENTS) ================= */}
-        <div className="max-w-xl mx-auto mb-14 animate-fade-in-up">
-          <div className="relative group">
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/30 to-blue-500/30 blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-
-            <div className="relative flex items-center gap-3 px-5 py-4 rounded-2xl bg-white/70 dark:bg-[#161b22]/70 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-lg">
-              <Search className="text-slate-400" size={20} />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search jobs by role, company, type or location..."
-                className="w-full bg-transparent outline-none text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* ================= JOBS GRID ================= */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[1, 2, 3].map((n) => (
@@ -109,6 +64,8 @@ const Jobs = () => {
 
 /* ================= JOB CARD ================= */
 const JobCard = ({ job }) => {
+  const navigate = useNavigate(); // ✅ ADDED
+
   const deadlineDate = job.deadline
     ? new Date(job.deadline).toLocaleDateString()
     : "Open";
@@ -176,23 +133,13 @@ const JobCard = ({ job }) => {
           {job.description}
         </p>
 
-        {job.link ? (
-          <a
-            href={job.link}
-            target="_blank"
-            rel="noreferrer"
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:bg-cyan-600 dark:hover:bg-cyan-400 transition-all shadow-lg hover:shadow-cyan-500/25 active:scale-[0.98]"
-          >
-            Apply Now <ArrowUpRight size={18} />
-          </a>
-        ) : (
-          <button
-            disabled
-            className="w-full py-3.5 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-400 font-bold cursor-not-allowed"
-          >
-            Application Closed
-          </button>
-        )}
+        {/* ✅ APPLY NOW LOGIC ADDED */}
+        <button
+          onClick={() => navigate(`/jobs/${job._id}/apply`)}
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:bg-cyan-600 dark:hover:bg-cyan-400 transition-all shadow-lg hover:shadow-cyan-500/25 active:scale-[0.98]"
+        >
+          Apply Now <ArrowUpRight size={18} />
+        </button>
       </div>
     </div>
   );

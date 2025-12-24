@@ -18,6 +18,8 @@ import Onboarding from "./pages/Onboarding";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProjectDetails from "./pages/ProjectDetails";
 import StaffDetails from "./pages/StaffDetails";
+import EventDetails from "./pages/EventDetails";
+import JobApply from "./pages/JobApply";
 
 // Admin Pages
 import AdminLogin from "./admin/pages/AdminLogin";
@@ -25,8 +27,8 @@ import AdminDashboard from "./admin/pages/AdminDashboard";
 import AdminProtectedRoute from "./admin/components/AdminProtectedRoute";
 import AdminUsers from "./admin/pages/Users";
 import AdminStaff from "./admin/pages/Staff";
-import AdminEvents from "./admin/pages/Events"; // ✅ ADD
-import AdminJobs from "./admin/pages/Jobs"; // ✅ ADD
+import AdminEvents from "./admin/pages/Events";
+import AdminJobs from "./admin/pages/Jobs";
 import UserDetails from "./admin/pages/UserDetails";
 
 function App() {
@@ -104,7 +106,6 @@ function App() {
           }
         />
 
-        {/* ✅ FIXED MISSING ROUTES */}
         <Route
           path="/admin/events"
           element={
@@ -188,10 +189,28 @@ function App() {
         />
 
         <Route
+          path="/events/:id"
+          element={
+            <ProtectedRoute>
+              <EventDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/jobs"
           element={
             <ProtectedRoute>
               <Jobs />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/jobs/:id/apply"
+          element={
+            <ProtectedRoute>
+              <JobApply />
             </ProtectedRoute>
           }
         />

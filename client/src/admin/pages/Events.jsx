@@ -341,8 +341,11 @@ const EventModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-300">
-      <div className="relative w-full max-w-2xl bg-white/80 dark:bg-[#161b22]/90 backdrop-blur-2xl rounded-[2.5rem] shadow-3xl overflow-hidden border border-white/20 flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md animate-in fade-in duration-300 flex justify-center pt-28 px-4">
+      <div
+        className="relative w-full max-w-2xl bg-white/80 dark:bg-[#161b22]/90 backdrop-blur-2xl rounded-[2.5rem] shadow-3xl overflow-hidden border border-white/20 flex flex-col"
+        style={{ maxHeight: "calc(100vh - 8rem)" }}
+      >
         <div className="h-24 bg-gradient-to-r from-violet-600 to-fuchsia-600 relative shrink-0 flex items-center px-8">
           <h2 className="text-2xl font-black text-white flex items-center gap-3">
             {isEditing ? (

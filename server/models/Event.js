@@ -6,17 +6,30 @@ const eventSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    description: {
-      type: String,
-      default: "",
-    },
     date: {
       type: Date,
       required: true,
     },
-    images: {
-      type: [String],
-      default: [],
+    time: {
+      type: String, // e.g., "10:00 AM"
+      required: true,
+    },
+    location: {
+      type: String, // e.g., "Main Auditorium"
+      required: true,
+    },
+    category: {
+      type: String,
+      enum: ["General", "Academic", "Cultural", "Workshop", "Sports"],
+      default: "General",
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    banner: {
+      type: String, // URL to the uploaded image
+      default: "",
     },
   },
   { timestamps: true }

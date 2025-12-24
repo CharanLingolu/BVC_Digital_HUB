@@ -2,13 +2,21 @@ import mongoose from "mongoose";
 
 const staffSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    department: { type: String, required: true },
-    qualification: String,
-    subjects: [String],
-    experience: String,
-    bio: String,
-    photo: String, // Cloudinary URL
+    name: { type: String, required: true, trim: true },
+
+    department: { type: String, required: true, trim: true },
+
+    position: { type: String, required: true, trim: true },
+
+    qualification: { type: String, trim: true },
+
+    subjects: { type: [String], default: [] },
+
+    experience: { type: String, trim: true },
+
+    bio: { type: String, trim: true },
+
+    photo: { type: String },
   },
   { timestamps: true }
 );

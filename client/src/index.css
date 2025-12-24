@@ -2,21 +2,106 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 🔥 FIX CHROME AUTOFILL DARK MODE ISSUE */
-input:-webkit-autofill,
-textarea:-webkit-autofill,
-select:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 1000px #0d1117 inset !important;
-  -webkit-text-fill-color: #ffffff !important;
-  caret-color: #ffffff !important;
-  transition: background-color 9999s ease-in-out 0s;
+@layer base {
+  /* ================= GLOBAL ADAPTIVE SCROLLBAR ================= */
+  :root {
+    scrollbar-color: #cbd5e1 #f1f5f9;
+    scrollbar-width: thin;
+  }
+
+  html.dark {
+    scrollbar-color: #334155 #05070a;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  /* Track */
+  ::-webkit-scrollbar-track {
+    @apply bg-[#f1f5f9] dark:bg-[#05070a];
+  }
+
+  /* Thumb */
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 dark:bg-slate-800 rounded-full border-2 border-solid;
+    border-color: #f1f5f9; /* Matches light track */
+    background-clip: content-box;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    border-color: #05070a; /* Matches dark track */
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400 dark:bg-slate-700;
+  }
+
+  /* ================= TEXT STYLES (DOUBLE COLOR & GLOW) ================= */
+  .text-glow-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-cyan-400 to-indigo-500;
+    /* This creates the glow effect using drop-shadow (cleaner than text-shadow for gradients) */
+    filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.3));
+    background-size: 200% auto;
+    animation: textShine 4s linear infinite;
+  }
+
+  @keyframes textShine {
+    to {
+      background-position: 200% center;
+    }
+  }
+
+  /* ================= AUTOFILL FIXES ================= */
+  input:-webkit-autofill,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px #0d1117 inset !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
+    transition: background-color 9999s ease-in-out 0s;
+  }
+
+  html:not(.dark) input:-webkit-autofill,
+  html:not(.dark) textarea:-webkit-autofill,
+  html:not(.dark) select:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px #f8fafc inset !important;
+    -webkit-text-fill-color: #0f172a !important;
+    caret-color: #0f172a !important;
+  }
+
+  /* ================= INPUT SPINNERS & DROPDOWNS ================= */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    @apply opacity-100 h-6 cursor-pointer mr-1;
+    filter: grayscale(1) brightness(1.5);
+  }
+
+  .dark input[type="number"]::-webkit-inner-spin-button {
+    filter: invert(1) brightness(2);
+  }
+
+  /* Native Dropdown Fix */
+  .dark select option {
+    background-color: #0d1117 !important;
+    color: #ffffff !important;
+  }
+
+  .dark select:focus option:checked {
+    background-color: #1e293b !important;
+    color: #818cf8 !important;
+  }
 }
 
-/* Light mode autofill */
-html:not(.dark) input:-webkit-autofill,
-html:not(.dark) textarea:-webkit-autofill,
-html:not(.dark) select:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 1000px #f8fafc inset !important;
-  -webkit-text-fill-color: #0f172a !important;
-  caret-color: #0f172a !important;
+@layer components {
+  /* ================= SHARED INPUT UTILITY ================= */
+  .input {
+    @apply w-full p-4 rounded-xl border outline-none transition duration-200;
+    @apply border-slate-200 dark:border-slate-800;
+    @apply bg-slate-50 dark:bg-[#0d1117];
+    @apply text-slate-900 dark:text-white;
+    @apply placeholder:text-slate-400 dark:placeholder:text-slate-500;
+    @apply focus:ring-2 focus:ring-indigo-500/50;
+  }
 }

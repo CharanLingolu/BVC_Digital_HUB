@@ -1,6 +1,9 @@
 import Job from "../models/Job.js";
+import User from "../models/User.js";      // ✅ Students
+import Staff from "../models/Staff.js";    // ✅ Staff
+import { sendEmail } from "../utils/sendEmail.js"; // ✅ Email helper
 
-// Get All Jobs
+// ================= GET ALL JOBS =================
 export const getJobs = async (req, res) => {
   try {
     // Sort by creation date descending (newest first)
@@ -11,18 +14,66 @@ export const getJobs = async (req, res) => {
   }
 };
 
-// Create Job
+// ================= CREATE JOB (WITH EMAIL) =================
 export const createJob = async (req, res) => {
   try {
+    // 🔹 Save Job
     const newJob = new Job(req.body);
     const savedJob = await newJob.save();
+
+    // 🔹 Fetch all student + staff emails
+    const students = await User.find({}, "email");
+    const staff = await Staff.find({}, "email");
+
+    const emailList = [
+      ...students.map((s) => s.email),
+      ...staff.map((f) => f.email),
+    ].filter(Boolean);
+
+    // 🔹 Send Email Notification
+    if (emailList.length > 0) {
+      await sendEmail({
+        to: emailList,
+        subject: `📢 New Job Opportunity: ${savedJob.title}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height:1.6">
+            <h2 style="color:#2563eb">${savedJob.title}</h2>
+            <p><strong>Company:</strong> ${savedJob.company}</p>
+            <p><strong>Location:</strong> ${savedJob.location}</p>
+            <p><strong>Job Type:</strong> ${savedJob.type}</p>
+            ${
+              savedJob.salary
+                ? `<p><strong>Salary:</strong> ${savedJob.salary}</p>`
+                : ""
+            }
+            <p><strong>Deadline:</strong> ${
+              savedJob.deadline
+                ? new Date(savedJob.deadline).toDateString()
+                : "Not specified"
+            }</p>
+            <p>${savedJob.description}</p>
+            ${
+              savedJob.link
+                ? `<p><a href="${savedJob.link}" target="_blank">Apply Here</a></p>`
+                : ""
+            }
+            <hr/>
+            <p style="font-size:12px;color:#6b7280">
+              Career Portal | This is an automated notification
+            </p>
+          </div>
+        `,
+      });
+    }
+
     res.status(201).json(savedJob);
   } catch (error) {
+    console.error("Job creation failed:", error);
     res.status(400).json({ message: error.message });
   }
 };
 
-// Update Job
+// ================= UPDATE JOB =================
 export const updateJob = async (req, res) => {
   try {
     const updatedJob = await Job.findByIdAndUpdate(req.params.id, req.body, {
@@ -34,7 +85,7 @@ export const updateJob = async (req, res) => {
   }
 };
 
-// Delete Job
+// ================= DELETE JOB =================
 export const deleteJob = async (req, res) => {
   try {
     await Job.findByIdAndDelete(req.params.id);

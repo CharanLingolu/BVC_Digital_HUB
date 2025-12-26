@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import AdminNavbar from "../components/AdminNavbar";
 import { toast } from "react-toastify";
+import { Mail } from "lucide-react";
 import {
   Users,
   Search,
@@ -476,12 +477,23 @@ const StaffForm = ({
         value={form.name || ""}
         onChange={(e) => setForm({ ...form, name: e.target.value })}
       />
+
+      {/* ✅ EMAIL FIELD (ADDED) */}
+      <Input
+        label="Email Address"
+        type="email"
+        placeholder="faculty@college.edu"
+        value={form.email || ""}
+        onChange={(e) => setForm({ ...form, email: e.target.value })}
+      />
+
       <Input
         label="Qualification"
         placeholder="Ph.D, M.Tech"
         value={form.qualification || ""}
         onChange={(e) => setForm({ ...form, qualification: e.target.value })}
       />
+
       <div className="space-y-1.5">
         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">
           Position
@@ -499,6 +511,7 @@ const StaffForm = ({
           ))}
         </select>
       </div>
+
       <div className="space-y-1.5">
         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">
           Department
@@ -516,6 +529,7 @@ const StaffForm = ({
           ))}
         </select>
       </div>
+
       <Input
         label="Experience (Years)"
         type="number"
@@ -523,6 +537,7 @@ const StaffForm = ({
         value={form.experience || ""}
         onChange={(e) => setForm({ ...form, experience: e.target.value })}
       />
+
       <Input
         label="Subjects"
         placeholder="Data Structures, AI"
@@ -568,6 +583,7 @@ const StaffForm = ({
     </button>
   </div>
 );
+
 
 const Input = ({ label, ...props }) => (
   <div className="space-y-1.5">
@@ -674,6 +690,18 @@ const StaffDetailsModal = ({ staff, onClose }) => {
                   </p>
                 </div>
               </div>
+              <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 group hover:border-emerald-500/50 transition-all flex md:flex-col items-center md:items-start gap-4 md:gap-0">
+  <Mail className="w-5 h-5 text-emerald-500 md:mb-2 shrink-0" />
+  <div>
+    <h4 className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1">
+      Email
+    </h4>
+    <p className="text-sm md:text-base font-bold text-slate-900 dark:text-white break-all">
+      {staff.email || "Not provided"}
+    </p>
+  </div>
+</div>
+
             </div>
 
             {/* Subject Expertise */}

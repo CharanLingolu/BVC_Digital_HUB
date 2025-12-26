@@ -17,6 +17,12 @@ const staffSchema = new mongoose.Schema(
     bio: { type: String, trim: true },
 
     photo: { type: String },
+    email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+  },
   },
   { timestamps: true }
 );

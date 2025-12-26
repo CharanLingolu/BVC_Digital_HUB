@@ -288,6 +288,16 @@ const UserDetails = () => {
                   icon={Code}
                   onChange={(v) => setUser({ ...user, skills: v })}
                 />
+                {/* NEW PASSWORD FIELD ADDED HERE */}
+                <Input
+                  label="New Password"
+                  value={newPassword}
+                  disabled={!editing}
+                  icon={Lock}
+                  type="password"
+                  placeholder="Leave blank to keep current"
+                  onChange={(v) => setNewPassword(v)}
+                />
               </div>
             </section>
 

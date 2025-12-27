@@ -75,16 +75,25 @@ const UniversalProtectedRoute = ({ children }) => {
   return children;
 };
 
+/**
+ * ✅ ROOT REDIRECTOR
+ * This component handles the "/" logic dynamically.
+ */
+const RootRedirector = () => {
+  const token = localStorage.getItem("token");
+  const adminToken = localStorage.getItem("adminToken");
+
+  if (adminToken) return <Navigate to="/admin/dashboard" replace />;
+  if (token) return <Navigate to="/home" replace />;
+  return <Landing />;
+};
+
 function App() {
   const [dark, setDark] = useState(
     () => localStorage.getItem("theme") === "dark"
   );
 
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // ✅ Read tokens for persistent session handling
-  const token = localStorage.getItem("token");
-  const adminToken = localStorage.getItem("adminToken");
 
   useEffect(() => {
     const html = document.documentElement;
@@ -140,28 +149,28 @@ function App() {
           <div className="flex-grow">
             <Routes>
               {/* ================= PUBLIC ================= */}
-              {/* ✅ AUTO-REDIRECT LOGGED IN USERS AWAY FROM LANDING PAGE */}
+              {/* ✅ Uses RootRedirector to decide which page to show at "/" */}
+              <Route path="/" element={<RootRedirector />} />
+
               <Route
-                path="/"
+                path="/signup"
                 element={
-                  adminToken ? (
-                    <Navigate to="/admin/dashboard" replace />
-                  ) : token ? (
+                  localStorage.getItem("token") ? (
                     <Navigate to="/home" replace />
                   ) : (
-                    <Landing />
+                    <Signup />
                   )
                 }
               />
-
-              {/* ✅ PREVENT LOGGED IN USERS FROM SEEING LOGIN/SIGNUP AGAIN */}
-              <Route
-                path="/signup"
-                element={token ? <Navigate to="/home" replace /> : <Signup />}
-              />
               <Route
                 path="/login"
-                element={token ? <Navigate to="/home" replace /> : <Login />}
+                element={
+                  localStorage.getItem("token") ? (
+                    <Navigate to="/home" replace />
+                  ) : (
+                    <Login />
+                  )
+                }
               />
 
               <Route path="/otp" element={<OTP />} />
@@ -171,7 +180,7 @@ function App() {
               <Route
                 path="/admin/login"
                 element={
-                  adminToken ? (
+                  localStorage.getItem("adminToken") ? (
                     <Navigate to="/admin/dashboard" replace />
                   ) : (
                     <AdminLogin />

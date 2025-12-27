@@ -52,6 +52,10 @@ const Home = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedImg, setSelectedImg] = useState(null);
+  const [isGalleryVisible, setIsGalleryVisible] = useState(false);
+  const galleryRef = useRef(null);
+
   const [liveData, setLiveData] = useState({
     studentCount: 0,
     facultyCount: 0,
@@ -60,6 +64,21 @@ const Home = () => {
     latestJob: null,
     nextEvent: null,
   });
+
+  // ✅ Intersection Observer for Staggered Fade-Up
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsGalleryVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (galleryRef.current) observer.observe(galleryRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const fetchHomeData = async () => {
@@ -109,23 +128,16 @@ const Home = () => {
       <main className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 pt-32 space-y-20">
         {/* ================= HERO SECTION (OPTIMIZED MEDIUM SCALE) ================= */}
         <section className="relative rounded-[2.5rem] p-[2px] overflow-hidden transition-all duration-700 shadow-[0_0_40px_-10px_rgba(99,102,241,0.4)]">
-          {/* The Flashy Border Gradient */}
           <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 animate-gradient-x" />
-
-          {/* The Glossy Glass Background */}
           <div className="absolute inset-0 bg-white/90 dark:bg-[#0d1117]/95 backdrop-blur-2xl" />
 
-          {/* Increased padding from p-10 to p-12/p-16 for better "breathing room" */}
           <div className="relative p-8 md:p-16 flex flex-col lg:flex-row items-center justify-between gap-12 min-h-[500px]">
             <div className="max-w-3xl space-y-8 text-center lg:text-left relative z-10">
-              {/* 🚀 COMPACT GLOWING BADGE */}
               <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-300 text-[11px] font-black uppercase tracking-[0.3em]">
                 <Zap size={14} className="fill-current animate-bounce" />
                 Live Status • 2025
               </div>
 
-              {/* 💎 BALANCED TYPOGRAPHY WITH FIXED SPACING */}
-              {/* Changed tracking-tighter to tracking-tight to fix merged letters */}
               <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] text-slate-900 dark:text-white">
                 Welcome, <br />
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 drop-shadow-sm">
@@ -147,7 +159,6 @@ const Home = () => {
                 journey.
               </p>
 
-              {/* ⚡ ISOLATED HOVER BUTTONS */}
               <div className="flex flex-wrap justify-center lg:justify-start gap-6 pt-4">
                 <button
                   onClick={() => navigate("/projects")}
@@ -168,7 +179,6 @@ const Home = () => {
               </div>
             </div>
 
-            {/* 🖼️ OPTIMIZED IMAGE FRAME */}
             <div className="hidden lg:block relative shrink-0 scale-110">
               <div className="absolute -inset-10 bg-gradient-to-tr from-indigo-600 to-pink-600 rounded-full blur-[80px] opacity-20 animate-pulse"></div>
               <div className="relative p-3 rounded-[4rem] bg-white/10 dark:bg-white/5 border border-white/20 backdrop-blur-md shadow-2xl rotate-3 hover:rotate-0 transition-all duration-700">
@@ -301,44 +311,89 @@ const Home = () => {
           </div>
         </section>
 
-        {/* ================= AESTHETIC GALLERY (FADE UP EFFECT) ================= */}
-        <section className="space-y-12">
+        {/* ================= MODERN AESTHETIC GALLERY (GLOWING & GLOSSY) ================= */}
+        <section ref={galleryRef} className="space-y-12">
           <div className="text-center space-y-2">
-            <h2 className="text-4xl font-black">Campus Highlights</h2>
-            <p className="text-slate-500 font-medium">
+            <h2 className="text-4xl font-black tracking-tighter">
+              Campus Highlights
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 font-medium">
               Glimpses of BVC excellence
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              "https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=800",
-              "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=800",
-              "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=800",
-              "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=800",
-              "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=800",
-              "https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=800",
+              "/INDUCTION-1.jpg",
+              "/Banner.jpg",
+              "/Banner-6-2.png",
+              "/Banner-6-1.png",
+              "/Banner-5.png",
+              "/Banner-4_compressed.jpg",
             ].map((src, i) => (
               <div
                 key={i}
-                className="relative overflow-hidden rounded-[2.5rem] shadow-xl group h-[300px] border border-white/10"
+                onClick={() => setSelectedImg(src)}
+                className={`relative overflow-hidden rounded-[2.5rem] shadow-xl group h-[350px] border cursor-zoom-in transition-all duration-1000 transform
+                  ${
+                    isGalleryVisible
+                      ? "opacity-100 translate-y-0"
+                      : "opacity-0 translate-y-20"
+                  }
+                  ${selectedImg === src ? "scale-95" : "scale-100"}
+                  bg-white dark:bg-[#111827]/50 backdrop-blur-md border-slate-200 dark:border-white/10 hover:border-indigo-500/50 hover:shadow-[0_0_30px_rgba(99,102,241,0.3)]`}
+                style={{ transitionDelay: `${i * 100}ms` }}
               >
                 <img
                   src={src}
-                  className="w-full h-full object-cover transition-all duration-700 
-                    grayscale-0 md:grayscale group-hover:grayscale-0 
-                    group-hover:scale-110 group-hover:-translate-y-2"
-                  alt="Campus Life"
+                  loading="lazy"
+                  className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1"
+                  alt={`Highlight ${i + 1}`}
+                  onError={(e) => {
+                    e.target.src =
+                      "https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=800";
+                  }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-8">
-                  <p className="text-white font-black text-lg">
-                    Academic Excellence
-                  </p>
+
+                {/* Glassmorphic Glossy Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/80 via-indigo-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-8">
+                  <div className="p-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <p className="text-white font-black text-lg flex items-center gap-2">
+                      <Sparkles size={18} className="text-amber-400" /> Academic
+                      Excellence
+                    </p>
+                    <p className="text-white/70 text-xs font-medium mt-1">
+                      BVC Engineering College • Odalarevu
+                    </p>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </section>
+
+        {/* ================= FULL IMAGE LIGHTBOX MODAL ================= */}
+        {selectedImg && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10 bg-indigo-950/90 backdrop-blur-2xl transition-all duration-500 animate-in fade-in"
+            onClick={() => setSelectedImg(null)}
+          >
+            <button
+              className="absolute top-8 right-8 p-4 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all border border-white/20 z-[110] active:scale-90"
+              onClick={() => setSelectedImg(null)}
+            >
+              <Zap className="rotate-45" size={28} />
+            </button>
+
+            <div className="relative max-w-5xl w-full h-full flex items-center justify-center animate-in zoom-in-95 duration-300">
+              <img
+                src={selectedImg}
+                className="max-w-full max-h-full rounded-[2.5rem] shadow-[0_0_80px_rgba(99,102,241,0.4)] border-4 border-white/10 object-contain"
+                alt="Selected Highlights"
+              />
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

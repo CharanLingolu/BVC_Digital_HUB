@@ -1,7 +1,7 @@
 import Staff from "../models/Staff.js";
 import Event from "../models/Event.js";
 import Job from "../models/Job.js";
-import User from "../models/User.js"; // ✅ Added for student count
+import User from "../models/User.js";
 import nodemailer from "nodemailer";
 
 // 📊 Get dashboard stats (Public)
@@ -49,6 +49,29 @@ export const getJobs = async (req, res) => {
   }
 };
 
+export const getJobById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate ID format to prevent casting crashes
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "Invalid Job ID format" });
+    }
+
+    const job = await Job.findById(id);
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    res.status(200).json(job);
+  } catch (error) {
+    console.error("Backend Error:", error.message);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// 🎉 Get a single event by ID
 export const getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);

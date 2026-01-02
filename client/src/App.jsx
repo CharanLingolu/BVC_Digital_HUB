@@ -26,10 +26,10 @@ const Profile = lazy(() => import("./pages/Profile"));
 const Staff = lazy(() => import("./pages/Staff"));
 const Events = lazy(() => import("./pages/Events"));
 const Jobs = lazy(() => import("./pages/Jobs"));
+const JobDetails = lazy(() => import("./pages/JobDetails")); // ✅ Added JobDetails
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const ProjectDetails = lazy(() => import("./pages/ProjectDetails"));
 const EditProject = lazy(() => import("./pages/EditProject"));
-const StaffDetails = lazy(() => import("./pages/StaffDetails"));
 const EventDetails = lazy(() => import("./pages/EventDetails"));
 const JobApply = lazy(() => import("./pages/JobApply"));
 
@@ -77,7 +77,6 @@ const UniversalProtectedRoute = ({ children }) => {
 
 /**
  * ✅ ROOT REDIRECTOR
- * This component handles the "/" logic dynamically.
  */
 const RootRedirector = () => {
   const token = localStorage.getItem("token");
@@ -149,7 +148,6 @@ function App() {
           <div className="flex-grow">
             <Routes>
               {/* ================= PUBLIC ================= */}
-              {/* ✅ Uses RootRedirector to decide which page to show at "/" */}
               <Route path="/" element={<RootRedirector />} />
 
               <Route
@@ -288,14 +286,6 @@ function App() {
                 }
               />
               <Route
-                path="/staff/:id"
-                element={
-                  <ProtectedRoute>
-                    <StaffDetails />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/events"
                 element={
                   <ProtectedRoute>
@@ -319,6 +309,15 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              {/* ✅ ADDED JOB DETAILS ROUTE */}
+              <Route
+                path="/jobs/:id"
+                element={
+                  <ProtectedRoute>
+                    <JobDetails />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/jobs/:id/apply"
                 element={
@@ -327,6 +326,9 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+              {/* Fallback for undefined routes to prevent white screen */}
+              <Route path="*" element={<RootRedirector />} />
             </Routes>
           </div>
           <Footer />

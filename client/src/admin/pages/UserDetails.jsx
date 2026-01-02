@@ -21,6 +21,7 @@ import {
   Info,
   Code,
   Lock,
+  Loader2,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -135,7 +136,7 @@ const UserDetails = () => {
         className="flex-1 flex flex-col md:flex-row p-4 md:p-8 gap-6 md:overflow-hidden relative z-10"
         style={{ marginTop: NAVBAR_HEIGHT }}
       >
-        {/* LEFT PANEL - Profile Block Fixed to contain scrollbar */}
+        {/* LEFT PANEL */}
         <div className="w-full md:w-[380px] shrink-0 bg-white/70 dark:bg-white/[0.03] backdrop-blur-3xl border border-slate-200 dark:border-white/10 rounded-[2rem] md:rounded-[2.5rem] shadow-xl dark:shadow-2xl relative h-fit md:h-full overflow-hidden">
           <div className="h-full w-full overflow-y-auto custom-scrollbar-thin p-6 md:p-8 flex flex-col items-center">
             <button
@@ -356,26 +357,26 @@ const UserDetails = () => {
         onClose={() => setShowUserDeleteModal(false)}
         onConfirm={confirmDeleteUser}
         title="Delete Account?"
-        description={`Permanently remove "${user.name}"?`}
+        description={`Permanently remove "${user.name}"? This profile and all its data will be permanently deleted.`}
         isProcessing={isProcessing}
         variant="danger"
+        confirmText="Yes, Delete User"
       />
       <Modal
         show={showProjDeleteModal}
         onClose={() => setShowProjDeleteModal(false)}
         onConfirm={confirmDeleteProject}
         title="Remove Project?"
-        description={`Remove "${selectedProj?.title}"?`}
+        description={`Are you sure you want to remove "${selectedProj?.title}"?`}
         isProcessing={isProcessing}
         variant="warning"
+        confirmText="Yes, Delete Project"
       />
 
       <style>{`
-        /* General Custom Scrollbar */
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.2); border-radius: 10px; }
         
-        /* Fixed Thin Scrollbar for Block Internal Scrolling */
         .custom-scrollbar-thin::-webkit-scrollbar { width: 3px; }
         .custom-scrollbar-thin::-webkit-scrollbar-track { 
           background: transparent; 
@@ -388,8 +389,8 @@ const UserDetails = () => {
         }
         .custom-scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.5); }
 
-        .scale-in { animation: scale-in 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
-        @keyframes scale-in { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .scale-in-center { animation: scale-in-center 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both; }
+        @keyframes scale-in-center { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
       `}</style>
     </div>
   );
@@ -404,42 +405,74 @@ const Modal = ({
   description,
   isProcessing,
   variant,
+  confirmText,
 }) => {
   if (!show) return null;
   const isDanger = variant === "danger";
+
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+      {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity"
         onClick={() => !isProcessing && onClose()}
       />
-      <div className="relative w-full max-w-sm bg-white dark:bg-[#0b0c15] border border-slate-200 dark:border-white/10 rounded-[2rem] p-8 shadow-2xl scale-in">
+
+      {/* Modal Content */}
+      <div className="relative w-full max-w-md bg-white dark:bg-[#0b0c15] border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-10 shadow-[0_0_80px_-20px_rgba(244,63,94,0.3)] overflow-hidden scale-in-center">
+        {/* Ambient Background Glow */}
+        <div
+          className={`absolute -top-24 -right-24 w-48 h-48 blur-[60px] pointer-events-none ${
+            isDanger ? "bg-rose-600/20" : "bg-amber-600/20"
+          }`}
+        />
+
         <div className="flex flex-col items-center text-center">
+          {/* Animated Icon Box */}
           <div
-            className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 border ${
+            className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-6 border animate-pulse ${
               isDanger
                 ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
                 : "bg-amber-500/10 text-amber-500 border-amber-500/20"
             }`}
           >
-            {isDanger ? <AlertTriangle size={32} /> : <Info size={32} />}
+            {isDanger ? (
+              <AlertTriangle size={40} strokeWidth={1.5} />
+            ) : (
+              <Info size={40} strokeWidth={1.5} />
+            )}
           </div>
-          <h3 className="text-xl font-black mb-2 uppercase">{title}</h3>
-          <p className="text-slate-500 text-xs mb-8">{description}</p>
+
+          <h3 className="text-2xl font-black mb-2 tracking-tight uppercase">
+            {title}
+          </h3>
+
+          <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-10">
+            {description}
+          </p>
+
           <div className="flex flex-col w-full gap-3">
             <button
               disabled={isProcessing}
               onClick={onConfirm}
-              className={`w-full py-4 rounded-xl font-bold transition-all ${
-                isDanger ? "bg-rose-600 text-white" : "bg-amber-600 text-white"
+              className={`w-full py-4 rounded-2xl text-white font-bold transition-all hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 ${
+                isDanger
+                  ? "bg-rose-600 hover:bg-rose-700 shadow-rose-600/20"
+                  : "bg-amber-600 hover:bg-amber-700 shadow-amber-600/20"
               }`}
             >
-              {isProcessing ? "Processing..." : "Confirm Action"}
+              {isProcessing ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Trash2 size={18} />
+              )}
+              {isProcessing ? "Processing..." : confirmText || "Confirm Action"}
             </button>
+
             <button
               disabled={isProcessing}
               onClick={onClose}
-              className="w-full py-4 rounded-xl bg-slate-100 dark:bg-white/5 font-bold"
+              className="w-full py-4 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 font-bold hover:bg-slate-200 dark:hover:bg-white/10 transition-all text-slate-600 dark:text-slate-400"
             >
               Cancel
             </button>

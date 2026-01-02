@@ -95,16 +95,25 @@
     @apply focus:ring-2 focus:ring-indigo-500/50;
     transition: all 0.2s ease-in-out; /* Normal speed for interaction */
   }
+
+  /* DROPDOWN MENU FIX */
+  .input option {
+    @apply bg-white text-slate-900;
+  }
+
+  .dark .input option {
+    background-color: #161b22;
+    @apply text-slate-100;
+  }
 }
 
 /* ========================================================= */
 /* =============== LIQUID THEME TRANSITION ================= */
 /* ========================================================= */
 
-/* Fix: We added 'svg' and 'path' to the exclusion list and ensured that 
-  hovered items (and their children) bypass the 1.2s theme delay.
-*/
-.theme-liquid-transition *:not(:hover):not(svg):not(path),
+/* Fix: Added 'select' and 'option' to exclusion to prevent laggy dropdowns */
+.theme-liquid-transition
+  *:not(:hover):not(svg):not(path):not(select):not(option),
 .theme-liquid-transition *::before,
 .theme-liquid-transition *::after {
   transition: background-color 1.2s cubic-bezier(0.4, 0, 0.2, 1),

@@ -19,9 +19,15 @@ import {
   Clock,
   Sparkles,
   AlertTriangle,
+  Loader2,
 } from "lucide-react";
 
 /* ================= CONSTANTS ================= */
+
+// ✅ GET THE API URL FROM YOUR .ENV
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const STAFF_API_URL = `${API_BASE_URL}/admin/staff`;
 
 const DEPARTMENTS = ["CSE", "ECE", "EEE", "MECH", "CIVIL"];
 const POSITIONS = [
@@ -69,7 +75,8 @@ const Staff = () => {
   /* -------- FETCH -------- */
   const fetchStaff = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/admin/staff", {
+      // ✅ REPLACED HARDCODED URL
+      const res = await axios.get(STAFF_API_URL, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setStaff(res.data);
@@ -109,7 +116,8 @@ const Staff = () => {
       Object.entries(form).forEach(([k, v]) => data.append(k, v));
       if (file) data.append("photo", file);
 
-      await axios.post("http://localhost:5000/api/admin/staff", data, {
+      // ✅ REPLACED HARDCODED URL
+      await axios.post(STAFF_API_URL, data, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -132,11 +140,10 @@ const Staff = () => {
       Object.entries(form).forEach(([k, v]) => data.append(k, v));
       if (file) data.append("photo", file);
 
-      await axios.put(
-        `http://localhost:5000/api/admin/staff/${editingStaff._id}`,
-        data,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      // ✅ REPLACED HARDCODED URL
+      await axios.put(`${STAFF_API_URL}/${editingStaff._id}`, data, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       toast.success("Staff updated", { autoClose: 1500 });
       setEditingStaff(null);
@@ -146,17 +153,14 @@ const Staff = () => {
     }
   };
 
-  // ✅ Updated Delete Logic with Fancy Modal
   const confirmDeleteStaff = async () => {
     if (!staffToDelete) return;
     setIsDeleting(true);
     try {
-      await axios.delete(
-        `http://localhost:5000/api/admin/staff/${staffToDelete._id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      // ✅ REPLACED HARDCODED URL
+      await axios.delete(`${STAFF_API_URL}/${staffToDelete._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       toast.success("Staff member removed successfully");
       fetchStaff();
       setShowDeleteModal(false);
@@ -180,13 +184,33 @@ const Staff = () => {
       <AdminNavbar />
 
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 10px; }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); }
-        .scale-in-center { animation: scale-in-center 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both; }
-        @keyframes scale-in-center { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-      `}</style>
+  .custom-scrollbar::-webkit-scrollbar { 
+    width: 14px; 
+  }
+  .custom-scrollbar::-webkit-scrollbar-track { 
+    background: transparent; 
+    margin-block: 48px; 
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb { 
+    background-color: rgba(156, 163, 175, 0.4); 
+    border: 5px solid transparent; 
+    background-clip: content-box; 
+    border-radius: 20px; 
+  }
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb { 
+    background-color: rgba(255, 255, 255, 0.15); 
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(99, 102, 241, 0.5);
+  }
+  .scale-in-center { 
+    animation: scale-in-center 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both; 
+  }
+  @keyframes scale-in-center { 
+    0% { transform: scale(0.9); opacity: 0; } 
+    100% { transform: scale(1); opacity: 1; } 
+  }
+`}</style>
 
       {/* Background Grids */}
       <div className="fixed inset-0 z-0 pointer-events-none">
@@ -196,7 +220,6 @@ const Staff = () => {
       </div>
 
       <main className="relative z-10 pt-28 px-6 max-w-7xl mx-auto pb-20">
-        {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
             <h1 className="text-4xl font-black tracking-tight flex items-center gap-3">
@@ -238,13 +261,21 @@ const Staff = () => {
               <select
                 value={dept}
                 onChange={(e) => setDept(e.target.value)}
+                style={{ colorScheme: "dark" }}
                 className="w-full pl-14 pr-10 py-4 rounded-2xl bg-transparent text-slate-900 dark:text-white text-lg appearance-none cursor-pointer outline-none focus:bg-white/50 dark:focus:bg-[#0d1117]/50 transition-all"
               >
-                <option value="" className="dark:bg-[#161b22]">
+                <option
+                  value=""
+                  className="dark:bg-[#161b22] text-slate-900 dark:text-white"
+                >
                   All Departments
                 </option>
                 {DEPARTMENTS.map((d) => (
-                  <option key={d} value={d} className="dark:bg-[#161b22]">
+                  <option
+                    key={d}
+                    value={d}
+                    className="dark:bg-[#161b22] text-slate-900 dark:text-white"
+                  >
                     {d}
                   </option>
                 ))}
@@ -315,7 +346,7 @@ const Staff = () => {
         />
       )}
 
-      {/* ✅ FANCY MODERN DELETE MODAL */}
+      {/* DELETE MODAL */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           <div
@@ -323,8 +354,7 @@ const Staff = () => {
             onClick={() => !isDeleting && setShowDeleteModal(false)}
           />
 
-          <div className="relative w-full max-w-md bg-white dark:bg-[#161b22] border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-10 shadow-[0_0_80px_-20px_rgba(244,63,94,0.3)] overflow-hidden scale-in-center">
-            {/* Ambient Background Glow for Modal */}
+          <div className="relative w-full max-w-md bg-white dark:bg-[#0b0c15] border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-10 shadow-[0_0_80px_-20px_rgba(244,63,94,0.3)] overflow-hidden scale-in-center">
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-rose-600/20 blur-[60px] pointer-events-none" />
 
             <div className="flex flex-col items-center text-center">
@@ -335,6 +365,7 @@ const Staff = () => {
               <h3 className="text-2xl font-black mb-2 tracking-tight uppercase">
                 Confirm Deletion
               </h3>
+
               <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-10">
                 Are you sure you want to remove{" "}
                 <span className="font-bold text-slate-900 dark:text-white">
@@ -347,12 +378,10 @@ const Staff = () => {
                 <button
                   disabled={isDeleting}
                   onClick={confirmDeleteStaff}
-                  className={`w-full py-4 rounded-2xl bg-rose-600 text-white font-bold transition-all hover:bg-rose-700 hover:scale-[1.02] active:scale-95 shadow-lg shadow-rose-600/20 flex items-center justify-center gap-2 ${
-                    isDeleting ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
+                  className="w-full py-4 rounded-2xl bg-rose-600 text-white font-bold transition-all hover:bg-rose-700 hover:scale-[1.02] shadow-lg shadow-rose-600/20 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isDeleting ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <Loader2 size={18} className="animate-spin" />
                   ) : (
                     <Trash2 size={18} />
                   )}
@@ -412,7 +441,7 @@ const StaffCard = ({ s, onView, onEdit, onDelete }) => (
             {s.experience || 0} Yrs
           </p>
         </div>
-        <div className="bg-slate-50 dark:bg-white/5 p-3 rounded-2xl border border-slate-100 dark:border-white/5 text-center transition-colors">
+        <div className="bg-slate-50 dark:bg-white/5 p-3 rounded-2xl border border-slate-100 dark:border-white/10 text-center transition-colors">
           <GraduationCap className="w-4 h-4 mx-auto mb-1 text-indigo-500" />
           <p className="text-xs font-black text-slate-700 dark:text-slate-200 truncate">
             {s.qualification || "N/A"}
@@ -423,7 +452,7 @@ const StaffCard = ({ s, onView, onEdit, onDelete }) => (
       <div className="flex gap-2 pt-4 border-t border-slate-100 dark:border-white/5 mt-auto">
         <button
           onClick={(e) => {
-            e.stopPropagation(); // Prevents double-triggering the parent's onClick
+            e.stopPropagation();
             onView();
           }}
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-600 dark:bg-indigo-500/10 text-white dark:text-indigo-300 font-bold text-sm hover:bg-indigo-700 dark:hover:bg-indigo-500/20 transition-all shadow-md shadow-indigo-500/20"
@@ -432,7 +461,7 @@ const StaffCard = ({ s, onView, onEdit, onDelete }) => (
         </button>
         <button
           onClick={(e) => {
-            e.stopPropagation(); // Prevents redirecting to profile when clicking Edit
+            e.stopPropagation();
             onEdit();
           }}
           className="p-3 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:bg-indigo-500 hover:text-white dark:hover:bg-indigo-500 transition-all"
@@ -441,7 +470,7 @@ const StaffCard = ({ s, onView, onEdit, onDelete }) => (
         </button>
         <button
           onClick={(e) => {
-            e.stopPropagation(); // Prevents redirecting to profile when clicking Delete
+            e.stopPropagation();
             onDelete();
           }}
           className="p-3 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-500 transition-all"
@@ -467,7 +496,9 @@ const Modal = ({ title, children, onClose }) => (
           <X className="w-5 h-5" />
         </button>
       </div>
-      <div className="p-8 overflow-y-auto custom-scrollbar">{children}</div>
+      <div className="p-8 overflow-y-auto overflow-x-hidden custom-scrollbar">
+        {children}
+      </div>
     </div>
   </div>
 );
@@ -490,7 +521,6 @@ const StaffForm = ({
         onChange={(e) => setForm({ ...form, name: e.target.value })}
       />
 
-      {/* ✅ EMAIL FIELD (ADDED) */}
       <Input
         label="Email Address"
         type="email"
@@ -512,12 +542,22 @@ const StaffForm = ({
         </label>
         <select
           className="w-full p-4 rounded-2xl bg-white/50 dark:bg-[#0d1117]/50 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition-all appearance-none cursor-pointer"
+          style={{ colorScheme: "dark" }}
           value={form.position || ""}
           onChange={(e) => setForm({ ...form, position: e.target.value })}
         >
-          <option value="">Select Position</option>
+          <option
+            value=""
+            className="dark:bg-[#0d1117] text-slate-900 dark:text-white"
+          >
+            Select Position
+          </option>
           {POSITIONS.map((p) => (
-            <option key={p} value={p}>
+            <option
+              key={p}
+              value={p}
+              className="dark:bg-[#0d1117] text-slate-900 dark:text-white"
+            >
               {p}
             </option>
           ))}
@@ -530,12 +570,15 @@ const StaffForm = ({
         </label>
         <select
           className="w-full p-4 rounded-2xl bg-white/50 dark:bg-[#0d1117]/50 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition-all appearance-none cursor-pointer"
+          style={{ colorScheme: "dark" }}
           value={form.department || ""}
           onChange={(e) => setForm({ ...form, department: e.target.value })}
         >
-          <option value="">Select Dept</option>
+          <option value="" className="dark:bg-[#0d1117] text-white">
+            Select Dept
+          </option>
           {DEPARTMENTS.map((d) => (
-            <option key={d} value={d}>
+            <option key={d} value={d} className="dark:bg-[#0d1117] text-white">
               {d}
             </option>
           ))}
@@ -608,8 +651,6 @@ const Input = ({ label, ...props }) => (
   </div>
 );
 
-/* ================= UPDATED VIEW MODAL ================= */
-
 const StaffDetailsModal = ({ staff, onClose }) => {
   const subjects = normalizeSubjects(staff.subjects);
 
@@ -621,10 +662,12 @@ const StaffDetailsModal = ({ staff, onClose }) => {
       <div
         className="relative w-full max-w-5xl bg-white dark:bg-[#0d1117] rounded-[2.5rem] md:rounded-[3rem] border border-slate-200 dark:border-white/10 overflow-hidden flex flex-col md:flex-row shadow-3xl h-[90vh] md:h-[85vh] max-h-[800px] transition-all duration-300"
         onClick={(e) => e.stopPropagation()}
+        style={{
+          maskImage: "radial-gradient(white, black)",
+        }}
       >
-        {/* Left Panel: Profile & Branding (Stacks on top for mobile) */}
+        {/* Left Panel */}
         <div className="w-full md:w-2/5 shrink-0 bg-gradient-to-b from-indigo-600 via-indigo-700 to-violet-800 dark:via-violet-800 dark:to-[#0d1117] p-6 md:p-10 flex flex-col items-center justify-center text-center relative overflow-hidden">
-          {/* Decorative shapes - Hidden on very small screens for clarity */}
           <div className="absolute inset-0 opacity-10 pointer-events-none hidden sm:block">
             <div className="absolute top-[-5%] left-[-5%] w-64 h-64 border-[30px] border-white rounded-full" />
             <div className="absolute bottom-[-5%] right-[-5%] w-32 h-32 border-[15px] border-white rounded-full" />
@@ -659,25 +702,25 @@ const StaffDetailsModal = ({ staff, onClose }) => {
           </div>
         </div>
 
-        {/* Right Panel: Content Grid (Scrollable internally) */}
-        <div className="flex-1 p-6 md:p-10 relative flex flex-col overflow-y-auto custom-scrollbar">
-          {/* Close Button - Stays fixed in the corner of the content panel */}
+        {/* Right Panel: Content Grid */}
+        <div className="flex-1 p-6 md:p-10 relative flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 md:top-6 md:right-6 p-2 md:p-2.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-rose-500 transition-all border border-slate-200 dark:border-white/10 z-50"
+            className="absolute top-4 right-4 md:top-6 md:right-6 p-2 md:p-2.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-rose-500 transition-all border border-slate-200 dark:border-white/10 z-50 shadow-md"
           >
             <X size={20} />
           </button>
 
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <Sparkles className="w-4 h-4 text-indigo-500" />
+              <span className="cursor-pointer p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500">
+                <Sparkles className="w-4 h-4" />
+              </span>
               <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.4em]">
                 Faculty Profile Data
               </span>
             </div>
 
-            {/* Quick Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 group hover:border-indigo-500/50 transition-all flex md:flex-col items-center md:items-start gap-4 md:gap-0">
                 <GraduationCap className="w-5 h-5 text-indigo-500 md:mb-2 shrink-0" />
@@ -714,7 +757,6 @@ const StaffDetailsModal = ({ staff, onClose }) => {
               </div>
             </div>
 
-            {/* Subject Expertise */}
             <div className="p-5 md:p-6 rounded-2xl md:rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
               <h4 className="text-[8px] md:text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-3 md:mb-4">
                 Subject Expertise
@@ -737,7 +779,6 @@ const StaffDetailsModal = ({ staff, onClose }) => {
               </div>
             </div>
 
-            {/* Biography */}
             <div className="px-1 md:px-2 pb-4">
               <h4 className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">
                 Professional Biography
@@ -749,7 +790,6 @@ const StaffDetailsModal = ({ staff, onClose }) => {
             </div>
           </div>
 
-          {/* Footer Info */}
           <div className="mt-auto pt-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-indigo-500" />
@@ -763,4 +803,5 @@ const StaffDetailsModal = ({ staff, onClose }) => {
     </div>
   );
 };
+
 export default Staff;

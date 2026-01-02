@@ -1,7 +1,8 @@
 import axios from "axios";
 
+// ✅ 1. Use the environment variable for the base URL
 const adminAPI = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
 });
 
 adminAPI.interceptors.request.use((config) => {

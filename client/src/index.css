@@ -7,30 +7,37 @@
 /* ========================================================= */
 
 @layer base {
-  /* 0. GLOBAL SMOOTH SCROLL (ALL PAGES) */
+  /* GLOBAL SMOOTH SCROLL (mobile-safe) */
   html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    overscroll-behavior: contain;
+    overscroll-behavior-y: contain;
   }
 
-  /* Disable smooth scroll ONLY when user prefers reduced motion */
+  /* Respect reduced motion */
   @media (prefers-reduced-motion: reduce) {
     html {
       scroll-behavior: auto;
     }
   }
 
-  /* 1. GLOBAL COLORS & TEXT VISIBILITY */
+  /* BODY — CRITICAL SCROLL PERFORMANCE FIX */
   body {
     @apply bg-slate-50 text-slate-900 transition-colors duration-500;
     @apply dark:bg-[#05070a] dark:text-slate-100;
     min-height: 100vh;
     overflow-x: hidden;
+
+    /* 🔑 DO NOT force GPU on body (causes scroll jank) */
+    transform: none;
+    backface-visibility: visible;
   }
 
-  /* 2. ADAPTIVE SCROLLBAR */
+  /* ========================================================= */
+  /* ================= SCROLLBAR ============================ */
+  /* ========================================================= */
+
   :root {
     scrollbar-color: #cbd5e1 #f1f5f9;
     scrollbar-width: thin;
@@ -59,13 +66,15 @@
     border-color: #05070a;
   }
 
-  /* 3. TEXT GLOW GRADIENT */
+  /* ========================================================= */
+  /* ================= TEXT EFFECTS ========================= */
+  /* ========================================================= */
+
   .text-glow-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-cyan-400 to-indigo-500;
     filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.3));
     background-size: 200% auto;
     animation: textShine 4s linear infinite;
-    will-change: background-position;
   }
 
   @keyframes textShine {
@@ -74,17 +83,15 @@
     }
   }
 
-  /* 4. AUTOFILL FIX */
+  /* ========================================================= */
+  /* ================= AUTOFILL FIX ========================= */
+  /* ========================================================= */
+
   input:-webkit-autofill,
-  input:-webkit-autofill:hover,
-  input:-webkit-autofill:focus,
   textarea:-webkit-autofill,
-  textarea:-webkit-autofill:hover,
-  textarea:-webkit-autofill:focus,
   select:-webkit-autofill {
     -webkit-box-shadow: 0 0 0px 1000px #0d1117 inset !important;
     -webkit-text-fill-color: #ffffff !important;
-    transition: background-color 5000s ease-in-out 0s;
     caret-color: #ffffff !important;
   }
 
@@ -102,7 +109,6 @@
 /* ========================================================= */
 
 @layer components {
-  /* SHARED INPUT */
   .input {
     @apply w-full p-4 rounded-xl border outline-none;
     @apply border-slate-200 dark:border-slate-800;
@@ -110,8 +116,10 @@
     @apply text-slate-900 dark:text-white;
     @apply placeholder:text-slate-400 dark:placeholder:text-slate-500;
     @apply focus:ring-2 focus:ring-indigo-500/50;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease,
-      background-color 0.2s ease;
+
+    /* Fast, scroll-safe transitions only */
+    transition: border-color 0.15s ease, box-shadow 0.15s ease,
+      background-color 0.15s ease;
   }
 
   .input option {
@@ -125,37 +133,31 @@
 }
 
 /* ========================================================= */
-/* ============ OPTIMIZED LIQUID THEME TRANSITION =========== */
+/* ============ THEME TRANSITION (SCROLL SAFE) ============== */
 /* ========================================================= */
 
-/* Only color-based transitions (NO transform, NO scroll impact) */
+/* ONLY color-based transitions — NO layout / transform */
 .theme-liquid-transition,
 .theme-liquid-transition main,
-.theme-liquid-transition section,
-.theme-liquid-transition .bg-card,
-.theme-liquid-transition .bg-white,
-.theme-liquid-transition .dark\:bg-black {
-  transition: background-color 1.2s cubic-bezier(0.4, 0, 0.2, 1),
-    color 1.2s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 1.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  will-change: background-color, color;
+.theme-liquid-transition section {
+  transition: background-color 0.6s ease, color 0.6s ease,
+    border-color 0.6s ease !important;
 }
 
-/* Fast interactions stay snappy */
+/* Buttons & interactions stay snappy */
 .theme-liquid-transition button,
 .theme-liquid-transition a,
 .theme-liquid-transition input,
-.theme-liquid-transition .input,
-.theme-liquid-transition svg,
-.theme-liquid-transition [class*="shadow-"] {
-  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease,
-    transform 0.2s ease !important;
+.theme-liquid-transition svg {
+  transition: background-color 0.15s ease, color 0.15s ease,
+    box-shadow 0.15s ease, transform 0.15s ease !important;
 }
 
 /* ========================================================= */
 /* ================= ANIMATIONS ============================ */
 /* ========================================================= */
 
+/* 🔑 Animations ONLY get GPU while running */
 @keyframes iconSpin {
   from {
     transform: rotate(0deg);
@@ -167,7 +169,6 @@
 
 .icon-spin-hover:hover {
   animation: iconSpin 0.8s linear infinite;
-  will-change: transform;
 }
 
 @keyframes heartPop {
@@ -186,23 +187,17 @@
 
 .heart-pop {
   animation: heartPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  will-change: transform, opacity;
 }
 
-.dark input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(1.2);
-  cursor: pointer;
-}
-
-/* Entrance Animations */
+/* Entrance animations — GPU only during animation */
 @keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translate3d(0, 30px, 0);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -218,11 +213,21 @@
 }
 
 .animate-fade-in-up {
-  animation: fade-in-up 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-  will-change: transform, opacity;
+  animation: fade-in-up 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 .animate-scale-in {
-  animation: scale-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  will-change: transform, opacity;
+  animation: scale-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ========================================================= */
+/* =============== MOBILE SCROLL STABILITY ================= */
+/* ========================================================= */
+
+/* Prevent animation layers from hijacking scroll on mobile */
+@media (max-width: 768px) {
+  * {
+    animation-play-state: running;
+    touch-action: pan-y;
+  }
 }

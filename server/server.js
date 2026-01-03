@@ -1,4 +1,8 @@
 import "dotenv/config";
+console.log(
+  "DEBUG: BREVO_KEY loaded?",
+  process.env.BREVO_API_KEY ? "YES" : "NO"
+);
 import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";

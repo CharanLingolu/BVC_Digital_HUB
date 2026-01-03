@@ -1,52 +1,50 @@
-import nodemailer from "nodemailer";
+import axios from "axios";
+import dotenv from "dotenv";
 
-// 1. Validation: Ensure credentials exist before starting
-if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
-  console.error("❌ Fatal Error: MAIL_USER or MAIL_PASS is not defined.");
-  process.exit(1); // Stop the app if critical config is missing
-}
-
-// 2. Transporter: Enable 'pool' to keep connections open for faster sending
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  pool: true, // Use pooled connections
-  maxConnections: 5, // Max simultaneous connections to the server
-  maxMessages: 100, // Max messages per connection before reloading
-  auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS,
-  },
-});
-
-// 3. Verification: Check connection success on server startup
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("❌ Email Service Error:", error);
-  } else {
-    console.log("✅ Email Service is ready to send messages");
-  }
-});
+dotenv.config();
 
 export const sendEmail = async ({ to, subject, html }) => {
-  // Guard clause for empty recipients
-  if (!to || (Array.isArray(to) && to.length === 0)) {
-    console.warn("⚠️ Email skipped: No recipients defined.");
-    return null;
+  if (!process.env.BREVO_API_KEY) {
+    console.error("❌ Fatal Error: BREVO_API_KEY is missing in .env file");
+    return;
   }
 
+  // ✅ FIX: Handle both Single String (OTP) and Array of Strings (Events)
+  let recipients;
+  if (Array.isArray(to)) {
+    // If it's an array, map it to the object format Brevo needs
+    recipients = to.map((email) => ({ email }));
+  } else {
+    // If it's a single string, wrap it in an array
+    recipients = [{ email: to }];
+  }
+
+  const data = {
+    sender: {
+      name: process.env.BREVO_SENDER_NAME || "BVC DigitalHub",
+      email: process.env.BREVO_SENDER_EMAIL || process.env.MAIL_USER,
+    },
+    to: recipients, // ✅ Use the formatted recipients list
+    subject: subject,
+    htmlContent: html,
+  };
+
   try {
-    const info = await transporter.sendMail({
-      from: `"BVC DigitalHub" <${process.env.MAIL_USER}>`,
-      to,
-      subject,
-      html,
+    const res = await axios.post("https://api.brevo.com/v3/smtp/email", data, {
+      headers: {
+        "api-key": process.env.BREVO_API_KEY,
+        "content-type": "application/json",
+        accept: "application/json",
+      },
+      timeout: 10000,
     });
 
-    console.log(`📧 Email sent to ${to} | ID: ${info.messageId}`);
-    return info;
+    console.log(`✅ Email sent! ID: ${res.data?.messageId}`);
+    return res.data;
   } catch (error) {
-    // 4. Error Handling: Log the error but don't crash the app
-    console.error("❌ Failed to send email:", error.message);
-    throw new Error(`Email sending failed: ${error.message}`);
+    const errorMsg = error.response?.data?.message || error.message;
+    console.error("❌ Brevo API Failed:", errorMsg);
+    // Don't throw error here for Events, otherwise the Event won't save if email fails
+    // Just log it.
   }
 };

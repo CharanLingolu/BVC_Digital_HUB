@@ -38,10 +38,14 @@ const Signup = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await API.post("/auth/signup", formData);
+      // ✅ CORRECT: Request OTP first
+      // ❌ INCORRECT: Do not call "/auth/signup" here
+      const res = await API.post("/auth/send-otp", { email: formData.email });
+
       toast.success(res.data.message, { autoClose: 1500 });
-      // Redirect to OTP verification after successful signup
-      navigate("/otp", { state: { email: formData.email } });
+
+      // Navigate to OTP page with data
+      navigate("/otp", { state: { ...formData } });
     } catch (error) {
       toast.error(error.response?.data?.message || "Signup failed", {
         autoClose: 1500,
@@ -200,7 +204,7 @@ const Signup = () => {
             >
               <span className="relative z-10 flex items-center gap-2">
                 {loading ? (
-                  "Creating..."
+                  "Sending OTP..."
                 ) : (
                   <>
                     Sign Up{" "}

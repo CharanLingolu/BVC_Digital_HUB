@@ -1,12 +1,16 @@
 import express from "express";
-// Initialize the router
-const router = express.Router(); 
+import {
+  signup,
+  login,
+  sendSignupOtp,
+  verifyOtp, // 👈 IMPORT THIS
+} from "../controllers/authController.js";
 
-import { signup, verifyOtp, login } from "../controllers/authController.js";
+const router = express.Router();
 
-// Routes
-router.post("/signup", signup);      // Step 1: User registers, system sends OTP
-router.post("/verify-otp", verifyOtp); // Step 2: User submits OTP to activate account
-router.post("/login", login);        // Step 3: Standard login
+router.post("/send-otp", sendSignupOtp);
+router.post("/verify-otp", verifyOtp); // 👈 ADD THIS LINE
+router.post("/signup", signup);
+router.post("/login", login);
 
 export default router;

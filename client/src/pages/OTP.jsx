@@ -13,7 +13,9 @@ const OTP = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const email = location.state?.email;
+  // ✅ FIX 1: Extract all data passed from Signup (Name, Email, Password)
+  // We need these to create the user account in the final step.
+  const { name, email, password } = location.state || {};
 
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,20 +25,27 @@ const OTP = () => {
     setLoading(true);
 
     try {
-      const res = await API.post("/auth/verify-otp", {
+      // ✅ FIX 2: Call '/signup' instead of '/verify-otp'
+      // This verifies the OTP AND creates the user AND returns the token.
+      const res = await API.post("/auth/signup", {
+        name,
         email,
+        password,
         otp,
       });
 
       toast.success(res.data.message);
 
-      // 🔐 STORE TOKEN
-      localStorage.setItem("token", res.data.token);
-
-      // ➡️ Go to onboarding
-      navigate("/onboarding");
+      // ✅ FIX 3: Store the token (Now it actually exists!)
+      if (res.data.token) {
+        localStorage.setItem("token", res.data.token);
+        // ➡️ Go to onboarding
+        navigate("/onboarding");
+      } else {
+        throw new Error("Token missing in response");
+      }
     } catch (error) {
-      toast.error(error.response?.data?.message || "OTP verification failed", {
+      toast.error(error.response?.data?.message || "Verification failed", {
         autoClose: 1500,
       });
     } finally {
@@ -44,8 +53,8 @@ const OTP = () => {
     }
   };
 
-  // Error State: No email found in navigation state
-  if (!email) {
+  // Error State: Missing Data (Prevents direct access without Signup step)
+  if (!email || !password) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#05070a] p-6 font-sans">
         <div className="w-full max-w-md bg-white/80 dark:bg-[#161b22]/80 backdrop-blur-2xl p-10 rounded-[2.5rem] shadow-2xl border border-red-100 dark:border-red-900/30 text-center animate-fade-in-up">
@@ -56,8 +65,7 @@ const OTP = () => {
             Invalid Request
           </h2>
           <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
-            We couldn't find an email to verify. This usually happens if you
-            refresh the page.
+            Missing account details. Please sign up again.
           </p>
           <Link
             to="/signup"
@@ -131,7 +139,7 @@ const OTP = () => {
                 </>
               ) : (
                 <>
-                  <span>Verify Securely</span>
+                  <span>Verify & Create Account</span>
                   <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
                 </>
               )}

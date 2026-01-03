@@ -1,12 +1,11 @@
 import Job from "../models/Job.js";
-import User from "../models/User.js"; // ✅ Students
-import Staff from "../models/Staff.js"; // ✅ Staff
-import { sendEmail } from "../utils/sendEmail.js"; // ✅ Email helper
+import User from "../models/User.js";
+import Staff from "../models/Staff.js";
+import { sendEmail } from "../utils/sendEmail.js";
 
 // ================= GET ALL JOBS =================
 export const getJobs = async (req, res) => {
   try {
-    // Sort by creation date descending (newest first)
     const jobs = await Job.find().sort({ createdAt: -1 });
     res.status(200).json(jobs);
   } catch (error) {
@@ -21,23 +20,32 @@ export const createJob = async (req, res) => {
     const newJob = new Job(req.body);
     const savedJob = await newJob.save();
 
-    // 🔹 Fetch all student + staff emails
-    const students = await User.find({}, "email");
-    const staff = await Staff.find({}, "email");
+    // 🔹 Fetch all student + staff emails (Efficiently)
+    const students = await User.find({ email: { $exists: true } }).select(
+      "email"
+    );
+    const staff = await Staff.find({ email: { $exists: true } }).select(
+      "email"
+    );
 
-    const emailList = [
-      ...students.map((s) => s.email),
-      ...staff.map((f) => f.email),
-    ].filter(Boolean);
+    // 🔹 Merge and Remove Duplicates
+    const uniqueEmails = [
+      ...new Set([
+        ...students.map((s) => s.email),
+        ...staff.map((f) => f.email),
+      ]),
+    ];
 
     // 🔹 Send Email Notification
-    if (emailList.length > 0) {
+    if (uniqueEmails.length > 0) {
       await sendEmail({
-        to: emailList,
+        to: uniqueEmails, // Updated sendEmail handles this array automatically
         subject: `📢 New Job Opportunity: ${savedJob.title}`,
         html: `
-          <div style="font-family: Arial, sans-serif; line-height:1.6">
-            <h2 style="color:#2563eb">${savedJob.title}</h2>
+          <div style="font-family: Arial, sans-serif; line-height:1.6; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;">
+            <h2 style="color:#2563eb; margin-bottom: 10px;">${
+              savedJob.title
+            }</h2>
             <p><strong>Company:</strong> ${savedJob.company}</p>
             <p><strong>Location:</strong> ${savedJob.location}</p>
             <p><strong>Job Type:</strong> ${savedJob.type}</p>
@@ -51,13 +59,15 @@ export const createJob = async (req, res) => {
                 ? new Date(savedJob.deadline).toDateString()
                 : "Not specified"
             }</p>
-            <p>${savedJob.description}</p>
+            <div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                <p style="margin:0;">${savedJob.description}</p>
+            </div>
             ${
               savedJob.link
-                ? `<p><a href="${savedJob.link}" target="_blank">Apply Here</a></p>`
+                ? `<p><a href="${savedJob.link}" target="_blank" style="background-color: #2563eb; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block;">Apply Here</a></p>`
                 : ""
             }
-            <hr/>
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;"/>
             <p style="font-size:12px;color:#6b7280">
               Career Portal | This is an automated notification
             </p>
@@ -84,44 +94,58 @@ export const updateJob = async (req, res) => {
       return res.status(404).json({ message: "Job not found" });
     }
 
-    // 🔹 Fetch all student + staff emails for update notification
-    const students = await User.find({}, "email");
-    const staff = await Staff.find({}, "email");
+    // 🔹 Fetch all emails
+    const students = await User.find({ email: { $exists: true } }).select(
+      "email"
+    );
+    const staff = await Staff.find({ email: { $exists: true } }).select(
+      "email"
+    );
 
-    const emailList = [
-      ...students.map((s) => s.email),
-      ...staff.map((f) => f.email),
-    ].filter(Boolean);
+    // 🔹 Merge and Remove Duplicates
+    const uniqueEmails = [
+      ...new Set([
+        ...students.map((s) => s.email),
+        ...staff.map((f) => f.email),
+      ]),
+    ];
 
     // 🔹 Send Email Notification for Update
-    if (emailList.length > 0) {
+    if (uniqueEmails.length > 0) {
       await sendEmail({
-        to: emailList,
+        to: uniqueEmails,
         subject: `🔄 Updated Job Opportunity: ${updatedJob.title}`,
         html: `
-          <div style="font-family: Arial, sans-serif; line-height:1.6">
-            <h2 style="color:#2563eb">Updated: ${updatedJob.title}</h2>
-            <p>Details for this job posting have been updated.</p>
-            <p><strong>Company:</strong> ${updatedJob.company}</p>
-            <p><strong>Location:</strong> ${updatedJob.location}</p>
-            <p><strong>Job Type:</strong> ${updatedJob.type}</p>
-            ${
-              updatedJob.salary
-                ? `<p><strong>Salary:</strong> ${updatedJob.salary}</p>`
-                : ""
-            }
-            <p><strong>Deadline:</strong> ${
-              updatedJob.deadline
-                ? new Date(updatedJob.deadline).toDateString()
-                : "Not specified"
-            }</p>
-            <p>${updatedJob.description}</p>
+          <div style="font-family: Arial, sans-serif; line-height:1.6; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;">
+            <h2 style="color:#2563eb; margin-bottom: 10px;">Updated: ${
+              updatedJob.title
+            }</h2>
+            <p style="color: #4b5563;">Details for this job posting have been updated.</p>
+            
+            <div style="background-color: #eff6ff; padding: 15px; border-radius: 6px; border-left: 4px solid #2563eb;">
+                <p><strong>Company:</strong> ${updatedJob.company}</p>
+                <p><strong>Location:</strong> ${updatedJob.location}</p>
+                <p><strong>Job Type:</strong> ${updatedJob.type}</p>
+                ${
+                  updatedJob.salary
+                    ? `<p><strong>Salary:</strong> ${updatedJob.salary}</p>`
+                    : ""
+                }
+                <p><strong>Deadline:</strong> ${
+                  updatedJob.deadline
+                    ? new Date(updatedJob.deadline).toDateString()
+                    : "Not specified"
+                }</p>
+            </div>
+
+            <p style="margin-top: 15px;">${updatedJob.description}</p>
+            
             ${
               updatedJob.link
-                ? `<p><a href="${updatedJob.link}" target="_blank">Apply Here</a></p>`
+                ? `<p><a href="${updatedJob.link}" target="_blank" style="color: #2563eb; font-weight: bold;">Apply Here &rarr;</a></p>`
                 : ""
             }
-            <hr/>
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;"/>
             <p style="font-size:12px;color:#6b7280">
               Career Portal | This is an automated notification regarding a job update
             </p>

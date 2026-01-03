@@ -6,7 +6,6 @@ import { sendEmail } from "../utils/sendEmail.js";
 /* ================= GET ALL EVENTS ================= */
 export const getEvents = async (req, res) => {
   try {
-    // Sort by date ascending (soonest events first)
     const events = await Event.find().sort({ date: 1 });
     res.status(200).json(events);
   } catch (error) {
@@ -19,10 +18,9 @@ export const createEvent = async (req, res) => {
   try {
     const { title, date, time, location, description, category } = req.body;
 
-    // Handle Cloudinary Image Upload
     let banner = "";
     if (req.file) {
-      banner = req.file.path; // Cloudinary URL
+      banner = req.file.path;
     }
 
     const newEvent = new Event({
@@ -37,17 +35,20 @@ export const createEvent = async (req, res) => {
 
     const savedEvent = await newEvent.save();
 
-    /* ========== EMAIL NOTIFICATION LOGIC ========== */
+    /* ========== EMAIL NOTIFICATION LOGIC (FIXED) ========== */
+    // 1. Fetch only emails
     const users = await User.find({ email: { $exists: true } }).select("email");
     const staff = await Staff.find({ email: { $exists: true } }).select(
       "email"
     );
-    const allEmails = [
-      ...users.map((u) => u.email),
-      ...staff.map((s) => s.email),
+
+    // 2. Merge and Remove Duplicates (Important!)
+    const uniqueEmails = [
+      ...new Set([...users.map((u) => u.email), ...staff.map((s) => s.email)]),
     ];
 
-    if (allEmails.length > 0) {
+    // 3. Send Email if recipients exist
+    if (uniqueEmails.length > 0) {
       const emailHtml = `
         <div style="font-family:Arial;padding:20px; border: 1px solid #e2e8f0; border-radius: 10px;">
           <h2 style="color:#4f46e5">📢 New Event Announced</h2>
@@ -64,8 +65,9 @@ export const createEvent = async (req, res) => {
         </div>
       `;
 
+      // Pass the array directly (sendEmail.js now handles it)
       await sendEmail({
-        to: allEmails,
+        to: uniqueEmails,
         subject: `📢 New Event: ${title}`,
         html: emailHtml,
       });
@@ -84,7 +86,6 @@ export const updateEvent = async (req, res) => {
     const { id } = req.params;
     const updates = { ...req.body };
 
-    // Update banner only if a new file is uploaded
     if (req.file) {
       updates.banner = req.file.path;
     }
@@ -97,17 +98,17 @@ export const updateEvent = async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    /* ========== EMAIL NOTIFICATION FOR UPDATE (ADDED) ========== */
+    /* ========== EMAIL NOTIFICATION FOR UPDATE ========== */
     const users = await User.find({ email: { $exists: true } }).select("email");
     const staff = await Staff.find({ email: { $exists: true } }).select(
       "email"
     );
-    const allEmails = [
-      ...users.map((u) => u.email),
-      ...staff.map((s) => s.email),
+
+    const uniqueEmails = [
+      ...new Set([...users.map((u) => u.email), ...staff.map((s) => s.email)]),
     ];
 
-    if (allEmails.length > 0) {
+    if (uniqueEmails.length > 0) {
       const emailHtml = `
         <div style="font-family:Arial;padding:20px; border: 1px solid #e2e8f0; border-radius: 10px;">
           <h2 style="color:#0891b2">🔄 Event Updated</h2>
@@ -132,7 +133,7 @@ export const updateEvent = async (req, res) => {
       `;
 
       await sendEmail({
-        to: allEmails,
+        to: uniqueEmails,
         subject: `🔄 Updated Event: ${updatedEvent.title}`,
         html: emailHtml,
       });

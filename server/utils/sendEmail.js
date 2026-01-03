@@ -1,17 +1,40 @@
+import axios from "axios";
+
 export const sendEmail = async ({ to, subject, html }) => {
-  if (process.env.NODE_ENV === "production") {
-    console.log("📧 Email skipped in production for:", to);
-    return;
-  }
+  if (!to || to.length === 0) return;
 
   try {
-    await transporter.sendMail({
-      from: `"BVC DigitalHub" <${process.env.MAIL_USER}>`,
-      to,
-      subject,
-      html,
-    });
+    await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      {
+        sender: {
+          email: process.env.BREVO_SENDER_EMAIL,
+          name: process.env.BREVO_SENDER_NAME || "BVC DigitalHub",
+        },
+        to: [
+          {
+            email: to,
+          },
+        ],
+        subject,
+        htmlContent: html,
+      },
+      {
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json",
+          accept: "application/json",
+        },
+        timeout: 10000,
+      }
+    );
+
+    console.log("✅ Brevo email sent to:", to);
   } catch (error) {
-    console.error("❌ Mail transporter error:", error.message);
+    console.error(
+      "❌ Brevo email error:",
+      error.response?.data || error.message
+    );
+    // ❗ Do NOT throw — signup should not fail
   }
 };

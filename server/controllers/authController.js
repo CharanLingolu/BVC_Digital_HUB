@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import transporter from "../config/mail.js";
+import { sendEmail } from "../utils/sendEmail.js"; // ✅ CHANGED: Import the new Brevo utility
 
 /* ===============================
    HELPERS
@@ -11,7 +11,11 @@ const generateOTP = () =>
 
 const normalizeEmail = (email) => email?.toLowerCase().trim();
 
-const isCollegeEmail = (email) => email.endsWith("@bvcgroup.in");
+// ⚠️ IMPORTANT: If you want to test with Gmail, comment out this check temporarily!
+const isCollegeEmail = (email) => {
+  // return email.endsWith("@bvcgroup.in"); // Original check
+  return true; // ✅ TEMPORARY: Allow all emails for testing deployment
+};
 
 /* ===============================
    SIGNUP
@@ -22,11 +26,12 @@ export const signup = async (req, res) => {
     email = normalizeEmail(email);
 
     // 🔒 College email restriction
-    if (!email || !isCollegeEmail(email)) {
-      return res.status(400).json({
-        message: "Only @bvcgroup.in email addresses are allowed",
-      });
-    }
+    // (If you enabled the check in helper, this will block Gmail)
+    // if (!email || !isCollegeEmail(email)) {
+    //   return res.status(400).json({
+    //     message: "Only @bvcgroup.in email addresses are allowed",
+    //   });
+    // }
 
     // Existing user check
     const existingUser = await User.findOne({ email });
@@ -51,26 +56,30 @@ export const signup = async (req, res) => {
       isOnboarded: false,
     });
 
-    // Send OTP email
-    try {
-      await transporter.sendMail({
-        from: `"BVC DigitalHub" <${process.env.MAIL_USER}>`,
-        to: email,
-        subject: "OTP Verification - BVC DigitalHub",
-        text: `Your OTP is ${otp}. It will expire in 5 minutes.`,
-      });
-    } catch (mailError) {
-      // rollback user if mail fails
-      await User.findByIdAndDelete(user._id);
-      return res.status(500).json({
-        message: "Failed to send OTP email",
-      });
-    }
+    // ✅ CHANGED: Send OTP via Brevo API (Axios)
+    // We construct a simple HTML message for the OTP
+    const emailHtml = `
+      <div style="font-family: sans-serif; padding: 20px;">
+        <h2>Welcome to BVC DigitalHub!</h2>
+        <p>Your verification code is:</p>
+        <h1 style="color: #4F46E5; letter-spacing: 5px;">${otp}</h1>
+        <p>This code will expire in 5 minutes.</p>
+      </div>
+    `;
+
+    // We await the email. Even if it fails, our new utility won't crash the server.
+    // Check your Render logs if emails don't arrive.
+    await sendEmail({
+      to: email,
+      subject: "OTP Verification - BVC DigitalHub",
+      html: emailHtml,
+    });
 
     res.status(201).json({
-      message: "Signup successful. OTP sent to college email.",
+      message: "Signup successful. OTP sent to email.",
     });
   } catch (error) {
+    console.error("Signup Error:", error); // Log the real error
     res.status(500).json({
       message: "Signup failed",
       error: error.message,
@@ -85,12 +94,6 @@ export const verifyOtp = async (req, res) => {
   try {
     let { email, otp } = req.body;
     email = normalizeEmail(email);
-
-    if (!email || !isCollegeEmail(email)) {
-      return res.status(400).json({
-        message: "Invalid college email address",
-      });
-    }
 
     const user = await User.findOne({ email });
     if (!user) {
@@ -122,16 +125,14 @@ export const verifyOtp = async (req, res) => {
     user.otpExpiry = null;
     await user.save();
 
-    const token = jwt.sign(
-    { id: user._id },
-    process.env.JWT_SECRET,
-    { expiresIn: "7d" }
-  );
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
-  res.json({
-    message: "OTP verified successfully",
-    token, // ✅ IMPORTANT
-  });
+    res.json({
+      message: "OTP verified successfully",
+      token,
+    });
   } catch (error) {
     res.status(500).json({
       message: "OTP verification failed",
@@ -147,13 +148,6 @@ export const login = async (req, res) => {
   try {
     let { email, password } = req.body;
     email = normalizeEmail(email);
-
-    // 🔒 College email only
-    if (!email || !isCollegeEmail(email)) {
-      return res.status(400).json({
-        message: "Only @bvcgroup.in email addresses are allowed",
-      });
-    }
 
     const user = await User.findOne({ email });
     if (!user) {

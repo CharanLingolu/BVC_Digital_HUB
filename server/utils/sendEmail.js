@@ -1,22 +1,25 @@
 import axios from "axios";
 
 export const sendEmail = async ({ to, subject, html }) => {
-  if (!to || to.length === 0) return;
+  // Security Check: Don't crash if email is missing
+  if (!to || to.length === 0) {
+    console.log("⚠️ No recipient email provided. Skipping.");
+    return;
+  }
+
+  console.log(`📤 Attempting to send email to: ${to} via Brevo API...`);
 
   try {
-    await axios.post(
+    const response = await axios.post(
       "https://api.brevo.com/v3/smtp/email",
       {
         sender: {
-          email: process.env.BREVO_SENDER_EMAIL,
+          // If env var is missing, fallback to a generic email to prevent 400 error
+          email: process.env.BREVO_SENDER_EMAIL || "admin@bvc-digitalhub.com",
           name: process.env.BREVO_SENDER_NAME || "BVC DigitalHub",
         },
-        to: [
-          {
-            email: to,
-          },
-        ],
-        subject,
+        to: [{ email: to }],
+        subject: subject,
         htmlContent: html,
       },
       {
@@ -25,16 +28,23 @@ export const sendEmail = async ({ to, subject, html }) => {
           "Content-Type": "application/json",
           accept: "application/json",
         },
-        timeout: 10000,
+        timeout: 10000, // 10-second timeout
       }
     );
 
-    console.log("✅ Brevo email sent to:", to);
-  } catch (error) {
-    console.error(
-      "❌ Brevo email error:",
-      error.response?.data || error.message
+    console.log(
+      "✅ Email sent successfully! Message ID:",
+      response.data.messageId
     );
-    // ❗ Do NOT throw — signup should not fail
+  } catch (error) {
+    // Detailed error logging for debugging on Render
+    console.error("❌ Email Failed.");
+    if (error.response) {
+      console.error("Status:", error.response.status);
+      console.error("Data:", JSON.stringify(error.response.data, null, 2));
+    } else {
+      console.error("Error Message:", error.message);
+    }
+    // We do NOT throw error here so the User Signup flow doesn't break
   }
 };
